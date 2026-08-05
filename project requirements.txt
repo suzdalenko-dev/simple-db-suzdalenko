@@ -1,0 +1,30 @@
+Funciones que DEBE tener
+
+La primera versión podría incluir:
+
+Crear, editar, probar y eliminar conexiones.
+Guardar varias conexiones por motor.
+Conectar y desconectar manualmente.
+Navegador lateral con:
+Bases de datos.
+Esquemas.
+Tablas.
+Vistas.
+Columnas.
+Procedimientos.
+Abrir un editor SQL.
+Ejecutar:
+Todo el documento.
+Solo el texto seleccionado.
+La sentencia donde está situado el cursor.
+Consultas SELECT, INSERT, UPDATE, DELETE.
+Creación y modificación de tablas.
+PL/SQL de Oracle.
+T-SQL de SQL Server.
+Transacciones con COMMIT y ROLLBACK.
+Resultados en tabla.
+Exportación a CSV, JSON o Excel.
+Historial de consultas.
+Tiempo de ejecución y número de filas.
+Cancelación de consultas largas.
+Límite configurable de resultados, por ejemplo 100000 filas.
