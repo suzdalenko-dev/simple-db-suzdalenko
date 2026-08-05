@@ -17,7 +17,7 @@ Ejecutar:
 Todo el documento.
 Solo el texto seleccionado.
 La sentencia donde está situado el cursor.
-Consultas SELECT, INSERT, UPDATE, DELETE.
+Consultas SELECT, INSERT, UPDATE, DELETE, ALTER, DROP, CREATE.
 Creación y modificación de tablas.
 PL/SQL de Oracle.
 T-SQL de SQL Server.

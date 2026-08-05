@@ -1,0 +1,463 @@
+Plan completo paso a paso
+Paso 1. Crear el esqueleto de la extensión
+
+Crearemos:
+
+package.json.
+Proyecto TypeScript.
+Configuración de compilación.
+ESLint.
+Depuración con F5.
+Pruebas.
+Empaquetado VSIX.
+Icono y contenedor propio en la barra lateral.
+README.md, CHANGELOG.md y licencia.
+Dependencias bloqueadas mediante package-lock.json.
+
+Identidad propuesta:
+
+Nombre del paquete: simple-db-suzdalenko.
+Nombre visible: Simple DB.
+Publicador: suzdalenko-dev.
+Identificador final: suzdalenko-dev.simple-db-suzdalenko.
+Primera versión de desarrollo: 0.0.1.
+
+Terminado cuando npm run compile, npm run lint, las pruebas y F5 funcionen y aparezca el icono de Simple DB.
+
+Paso 2. Definir el contrato común para los cuatro motores
+
+Crearemos una interfaz DatabaseAdapter con operaciones como:
+
+Probar conexión.
+Conectar.
+Desconectar.
+Obtener bases de datos.
+Obtener esquemas.
+Obtener tablas.
+Obtener vistas.
+Obtener columnas.
+Obtener procedimientos y funciones.
+Ejecutar SQL.
+Comenzar transacción.
+Confirmar transacción.
+Deshacer transacción.
+Cancelar consulta.
+Leer resultados progresivamente.
+
+También definiremos modelos comunes:
+
+ConnectionProfile.
+QuerySession.
+QueryExecution.
+QueryResult.
+ColumnMetadata.
+DatabaseObject.
+TransactionState.
+
+Así, toda la interfaz de VS Code trabajará igual y únicamente cambiará el adaptador interno.
+
+Paso 3. Crear y guardar conexiones de forma segura
+
+Crearemos un formulario para:
+
+Crear conexión.
+Editarla.
+Probarla.
+Guardarla.
+Eliminarla.
+
+Campos comunes:
+
+Nombre de la conexión.
+Motor.
+Servidor.
+Puerto.
+Usuario.
+Contraseña.
+Base de datos inicial.
+Tiempo de conexión.
+Tiempo máximo de consulta.
+Configuración SSL.
+
+Campos específicos:
+
+PostgreSQL: base de datos inicial y SSL.
+MySQL: base de datos inicial y SSL.
+SQL Server: base de datos, instancia, cifrado y confianza del certificado.
+Oracle: servicio/PDB o connectString.
+
+Puertos predeterminados:
+
+PostgreSQL: 5432.
+MySQL: 3306.
+SQL Server: 1433.
+Oracle: 1521.
+
+Las contraseñas no se guardarán en archivos JSON ni en Git. Se almacenarán con SecretStorage. El resto del perfil se guardará en globalState, para poder utilizarlo desde cualquier proyecto abierto en VS Code.
+
+La prueba de conexión será temporal: conectará, obtendrá la versión del servidor, mostrará el tiempo empleado y cerrará la conexión.
+
+Paso 4. Crear el navegador lateral y el gestor de conexiones
+
+El navegador mostrará las conexiones agrupadas por motor y su estado:
+
+Desconectada.
+Conectando.
+Conectada.
+Error.
+Transacción activa.
+
+Cada conexión tendrá acciones:
+
+Conectar.
+Desconectar.
+Probar.
+Editar.
+Eliminar.
+Refrescar.
+Abrir nueva consulta.
+
+El ConnectionManager mantendrá varios pools simultáneos:
+
+PostgreSQL conectado.
+Oracle conectado.
+MySQL conectado.
+SQL Server conectado.
+
+Todos podrán permanecer abiertos a la vez.
+
+Si desconectas una conexión con consultas o transacciones activas, la extensión pedirá confirmación, cancelará las consultas y hará ROLLBACK antes de cerrar.
+
+Paso 5. Crear el editor SQL y vincularlo a una conexión
+
+La acción “Nueva consulta” abrirá un documento SQL normal de VS Code.
+
+Cada editor tendrá asociado:
+
+Motor.
+Perfil de conexión.
+Base de datos.
+Esquema.
+Estado de transacción.
+Consultas en ejecución.
+
+La barra de estado mostrará algo parecido a:
+
+PostgreSQL | Producción | froxa_db | public | Auto-commit
+
+o:
+
+Oracle | Libra | FROXA | TX activa
+
+Esto es esencial: COMMIT o ROLLBACK afectarán únicamente a la sesión del editor activo, no a otra pestaña.
+
+Se podrá cambiar la conexión del editor siempre que no tenga una transacción abierta.
+
+Paso 6. Implementar las tres formas de ejecución
+
+Añadiremos comandos para ejecutar:
+
+Documento completo.
+Texto seleccionado.
+Sentencia donde está situado el cursor.
+
+Comportamiento:
+
+Si existe una selección, se ejecuta exactamente esa selección.
+Si no existe selección, se localiza la sentencia actual.
+Ejecutar documento procesará todos los bloques en orden.
+Por defecto se detendrá en el primer error y señalará el bloque que falló.
+
+Los separadores tendrán que entender cada dialecto:
+
+SQL general: ;.
+PostgreSQL: bloques con comillas dólar como $$ ... $$.
+SQL Server: separador GO.
+Oracle: bloques DECLARE/BEGIN ... END; y /.
+MySQL: bloques y directiva DELIMITER.
+
+No utilizaremos un simple split(';'), porque rompería PL/SQL, procedimientos, comentarios y cadenas de texto.
+
+Paso 7. Construir la tabla de resultados
+
+Los resultados se mostrarán en una tabla webview con:
+
+Nombre de columnas.
+Tipo de dato.
+Filas.
+Valores NULL diferenciados.
+Copiar celda, fila o selección.
+Varias tablas cuando una ejecución produzca varios resultados.
+Mensajes para DDL y DML.
+Número de filas recuperadas o afectadas.
+Tiempo de ejecución.
+Tiempo total de lectura.
+Aviso cuando se alcance el límite.
+
+Ejemplos:
+
+SELECT: 42.310 filas recuperadas en 2,84 segundos.
+UPDATE: 138 filas afectadas.
+CREATE TABLE: ejecución correcta.
+SELECT: 100.000 filas — límite alcanzado.
+
+No enviaremos 100.000 filas de golpe al webview. Se leerán y mostrarán en páginas, por ejemplo de 500 filas.
+
+Paso 8. Crear el almacenamiento temporal de resultados grandes
+
+El límite predeterminado será:
+
+simpleDb.maxRows = 100000
+
+También tendremos:
+
+simpleDb.resultPageSize = 500
+
+Los resultados completos hasta el límite se almacenarán temporalmente por páginas. La interfaz solo cargará la página visible.
+
+Esto permitirá:
+
+No bloquear VS Code.
+Exportar todas las filas recuperadas.
+Evitar mantener grandes cantidades de datos en memoria.
+Eliminar automáticamente los resultados temporales al cerrar la sesión.
+
+No añadiremos automáticamente LIMIT, TOP o FETCH al SQL, porque podríamos modificar incorrectamente una consulta. El límite se controlará mediante cursores, result sets o streaming de cada controlador.
+
+Oracle, por ejemplo, recomienda ResultSet para cantidades grandes de datos en lugar de cargar todas las filas en memoria. Documentación oficial de ejecución y ResultSet.
+
+Paso 9. Implementar PostgreSQL completamente
+
+PostgreSQL será el primer motor de referencia.
+
+Incluiremos:
+
+Pool de conexiones.
+Bases de datos.
+Esquemas.
+Tablas.
+Vistas.
+Columnas.
+Funciones y procedimientos.
+SELECT, INSERT, UPDATE y DELETE.
+DDL.
+Cursores para resultados grandes.
+Transacciones.
+Cancelación.
+Errores normalizados.
+
+Las transacciones utilizarán un cliente reservado para el editor. PostgreSQL exige que todos los comandos de una transacción utilicen el mismo cliente; no se puede usar indiscriminadamente pool.query(). Documentación oficial.
+
+Paso 10. Implementar Oracle
+
+Lo implementaremos pronto porque es el motor más diferente y porque tú trabajas con Oracle/Libra.
+
+Incluiremos:
+
+Conexión por servicio/PDB.
+Esquemas accesibles.
+ALL_TABLES.
+ALL_VIEWS.
+ALL_TAB_COLUMNS.
+ALL_PROCEDURES.
+Funciones y paquetes.
+SQL normal.
+Bloques PL/SQL.
+Result sets.
+COMMIT y ROLLBACK.
+Cancelación con connection.break().
+
+La primera versión ejecutará PL/SQL, pero no intentará emular completamente SQLPlus. Comandos como SPOOL, SET o toda la consola SQLPlus quedarían para una versión posterior.
+
+También verificaremos antes la versión real de Oracle de Libra para decidir entre Thin y Thick.
+
+Paso 11. Implementar SQL Server
+
+Incluiremos:
+
+Exploración de sys.databases.
+Esquemas.
+Tablas y vistas.
+Columnas.
+Procedimientos.
+T-SQL.
+Bloques separados mediante GO.
+Varias tablas de resultados.
+Transacciones con mssql.Transaction.
+Cancelación mediante Request.cancel().
+
+El controlador mssql reserva una conexión durante la transacción y la devuelve al pool después del COMMIT o ROLLBACK, que coincide con nuestra arquitectura de sesión por editor. Documentación de transacciones y cancelación.
+
+Inicialmente soportaremos autenticación SQL Server con usuario y contraseña. La autenticación integrada de Windows requiere otro controlador nativo y se podrá añadir después si la necesitas.
+
+Paso 12. Implementar MySQL
+
+Incluiremos:
+
+Bases de datos.
+Tablas.
+Vistas.
+Columnas.
+Procedimientos y funciones.
+SQL y DDL.
+Transacciones.
+Streaming de filas.
+DELIMITER para procedimientos.
+Cancelación mediante el identificador de conexión y KILL QUERY, con cierre de conexión como alternativa segura.
+
+Como en MySQL una base de datos actúa normalmente como esquema, no mostraremos dos niveles idénticos.
+
+Paso 13. Unificar transacciones
+
+El comportamiento será igual en los cuatro motores:
+
+Auto-commit activado de forma predeterminada.
+Comando “Begin Transaction”.
+Comando “Commit”.
+Comando “Rollback”.
+Indicador visual de transacción.
+Una conexión física reservada mientras exista la transacción.
+Prohibición de cambiar de motor durante la transacción.
+Aviso si se cierra la pestaña con cambios sin confirmar.
+ROLLBACK automático al cerrar de forma inesperada.
+
+Fuera de una transacción, las consultas podrán utilizar libremente el pool.
+
+Dentro de una transacción, las consultas se ejecutarán secuencialmente sobre la misma conexión.
+
+Paso 14. Implementar cancelación y tiempos máximos
+
+Cada ejecución tendrá un identificador y un controlador de cancelación.
+
+Métodos previstos:
+
+Motor	Cancelación
+PostgreSQL	Cancelación del backend utilizando su PID
+MySQL	KILL QUERY o cierre de la conexión
+SQL Server	Request.cancel()
+Oracle	connection.break()
+
+También habrá:
+
+Botón “Cancelar consulta”.
+Comando desde la paleta.
+Progreso cancelable.
+Tiempo máximo configurable.
+Limpieza correcta de cursores y result sets.
+Estado “transacción necesita ROLLBACK” cuando una cancelación deje la transacción abortada.
+Paso 15. Exportar CSV, JSON y Excel
+
+Desde cada resultado se podrá elegir:
+
+Exportar CSV.
+Exportar JSON.
+Exportar Excel .xlsx.
+
+La exportación utilizará el resultado temporal ya recuperado; no volverá a ejecutar la consulta.
+
+Opciones:
+
+Nombre y ubicación del archivo.
+Delimitador CSV.
+Incluir encabezados.
+Codificación UTF-8.
+Formato de fechas.
+Representación de NULL.
+
+Excel se escribirá progresivamente para que una exportación de 100.000 filas no tenga que construirse completamente en memoria.
+
+Paso 16. Crear el historial de consultas
+
+Cada entrada guardará:
+
+Fecha y hora.
+Motor.
+Conexión.
+Base de datos/esquema.
+SQL.
+Duración.
+Filas.
+Resultado correcto o error.
+
+Acciones:
+
+Abrir consulta en un editor nuevo.
+Volver a ejecutarla.
+Copiarla.
+Eliminar una entrada.
+Vaciar historial.
+Activar o desactivar historial.
+
+El historial será local y tendrá un máximo configurable, por ejemplo 500 consultas. Debemos advertir que una sentencia SQL puede contener datos sensibles aunque no contenga la contraseña de conexión.
+
+Paso 17. Seguridad y protección frente a errores
+
+Añadiremos:
+
+Contraseñas exclusivamente en SecretStorage.
+Eliminación de secretos al borrar perfiles.
+Nunca imprimir credenciales en logs.
+Confirmación opcional para DROP, TRUNCATE y otras operaciones destructivas.
+Aviso configurable para DELETE o UPDATE sin WHERE.
+Límite de filas.
+Límite de tamaño por celda.
+Tratamiento especial de BLOB, Buffer, CLOB y valores binarios.
+Cierre de pools, conexiones, cursores y transacciones al desactivar la extensión.
+Paso 18. Pruebas automáticas y de integración
+
+Tendremos tres niveles:
+
+Pruebas unitarias:
+Separación de sentencias.
+Comentarios y cadenas.
+PL/SQL.
+GO.
+DELIMITER.
+Gestión de perfiles.
+Transacciones.
+Paginación.
+Pruebas con bases de datos de desarrollo:
+PostgreSQL.
+MySQL.
+SQL Server.
+Oracle Free.
+Pruebas dentro de VS Code:
+Crear conexión.
+Abrir navegador.
+Ejecutar consulta.
+Cancelar.
+Exportar.
+Reiniciar VS Code y recuperar perfiles.
+
+Las operaciones INSERT, UPDATE, DELETE y DDL se probarán únicamente en bases de datos de prueba, nunca en producción.
+
+Paso 19. Empaquetado y publicación
+
+Antes de publicar:
+
+Compilar.
+Ejecutar lint.
+Ejecutar pruebas.
+Generar VSIX.
+Instalar manualmente el VSIX.
+Probar en Windows.
+Probar en Linux.
+Verificar PostgreSQL, MySQL, SQL Server y Oracle.
+Revisar tamaño del paquete.
+Preparar documentación y capturas.
+Publicar como beta 0.1.0.
+
+Si en el futuro utilizamos dependencias nativas, VS Code permite generar paquetes específicos para plataformas como win32-x64 o linux-x64. Documentación de publicación.
+
+Versiones intermedias propuestas
+Versión	Resultado
+0.0.1	Estructura TypeScript y navegador vacío
+0.0.2	CRUD seguro de conexiones
+0.0.3	PostgreSQL completo
+0.0.4	Oracle completo
+0.0.5	SQL Server completo
+0.0.6	MySQL completo
+0.0.7	Exportaciones, historial y resultados grandes
+0.1.0	Primera beta con los cuatro motores
+
+El siguiente trabajo concreto será únicamente el Paso 1: preparar el esqueleto TypeScript en simple-db-suzdalenko, ejecutarlo con F5 y comprobar que aparece el nuevo navegador lateral. A partir de ahí iremos avanzando paso por paso y probando cada función antes de incorporar la siguiente.
