@@ -1,0 +1,12 @@
+.github/**
+.vscode/**
+src/**
+dist/test/**
+coverage/**
+node_modules/**
+.gitignore
+eslint.config.mjs
+tsconfig.json
+plan.txt
+project requirements.txt
+*.vsix

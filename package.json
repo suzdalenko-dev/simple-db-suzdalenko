@@ -1,0 +1,95 @@
+{
+  "name": "simple-db-suzdalenko",
+  "displayName": "Simple DB",
+  "description": "Cliente de bases de datos para PostgreSQL, MySQL, SQL Server y Oracle dentro de Visual Studio Code.",
+  "version": "0.0.1",
+  "publisher": "suzdalenko-dev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/suzdalenko-dev/simple-db-suzdalenko.git"
+  },
+  "homepage": "https://github.com/suzdalenko-dev/simple-db-suzdalenko#readme",
+  "bugs": {
+    "url": "https://github.com/suzdalenko-dev/simple-db-suzdalenko/issues"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "extensionKind": [
+    "workspace"
+  ],
+  "categories": [
+    "Other",
+    "Data Science"
+  ],
+  "keywords": [
+    "database",
+    "sql",
+    "postgresql",
+    "mysql",
+    "sql-server",
+    "oracle"
+  ],
+  "activationEvents": [
+    "onView:simpleDb.connections",
+    "onCommand:simpleDb.refreshConnections"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "simpleDb.refreshConnections",
+        "title": "Actualizar conexiones",
+        "category": "Simple DB",
+        "icon": "$(refresh)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "simpleDb",
+          "title": "Simple DB",
+          "icon": "resources/simple-db.svg"
+        }
+      ]
+    },
+    "views": {
+      "simpleDb": [
+        {
+          "id": "simpleDb.connections",
+          "name": "Conexiones",
+          "type": "tree"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "simpleDb.refreshConnections",
+          "when": "view == simpleDb.connections",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./tsconfig.json",
+    "watch": "tsc -watch -p ./tsconfig.json",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "check": "npm run compile && npm run lint && npm run test",
+    "package": "npm run check && vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@types/node": "20.19.43",
+    "@types/vscode": "1.95.0",
+    "@vscode/vsce": "3.9.2",
+    "eslint": "9.39.5",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.66.0",
+    "vitest": "3.2.7"
+  }
+}
