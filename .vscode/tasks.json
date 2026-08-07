@@ -3,18 +3,11 @@
   "tasks": [
     {
       "type": "npm",
-      "script": "compile",
+      "script": "lint",
       "group": {
         "kind": "build",
         "isDefault": true
-      },
-      "problemMatcher": "$tsc"
-    },
-    {
-      "type": "npm",
-      "script": "watch",
-      "isBackground": true,
-      "problemMatcher": "$tsc-watch"
+      }
     }
   ]
 }

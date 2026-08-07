@@ -1,30 +1,62 @@
-Funciones que DEBE tener
+SIMPLE DB 0.1.1 — REQUISITOS DE PRODUCTO
 
-La primera versión podría incluir:
+Lenguaje y ejecución
+- Todo el código de la extensión y todos los tests se escriben en JavaScript.
+- No se usa TypeScript, tsconfig.json ni un paso de compilación TypeScript.
+- F5 carga directamente src/extension.js.
 
-Crear, editar, probar y eliminar conexiones.
-Guardar varias conexiones por motor.
-Conectar y desconectar manualmente.
-Navegador lateral con:
-Bases de datos.
-Esquemas.
-Tablas.
-Vistas.
-Columnas.
-Procedimientos.
-Abrir un editor SQL.
-Ejecutar:
-Todo el documento.
-Solo el texto seleccionado.
-La sentencia donde está situado el cursor.
-Consultas SELECT, INSERT, UPDATE, DELETE, ALTER, DROP, CREATE.
-Creación y modificación de tablas.
-PL/SQL de Oracle.
-T-SQL de SQL Server.
-Transacciones con COMMIT y ROLLBACK.
-Resultados en tabla.
-Exportación a CSV, JSON o Excel.
-Historial de consultas.
-Tiempo de ejecución y número de filas.
-Cancelación de consultas largas.
-Límite configurable de resultados, por ejemplo 100000 filas.
+Motores obligatorios
+- SQLite.
+- PostgreSQL.
+- MySQL.
+- SQL Server.
+- Oracle.
+
+Conexiones
+- Crear, editar, probar y eliminar conexiones.
+- Varias conexiones por motor y varios motores conectados a la vez.
+- Contraseñas en VS Code SecretStorage.
+- SSL/TLS/cifrado y timeouts según el motor.
+
+Exploración
+- Bases de datos y esquemas cuando el motor los exponga.
+- Tablas, vistas y columnas.
+- Vistas materializadas donde existan.
+- Procedimientos y funciones.
+- Packages Oracle.
+- Índices, triggers, secuencias y tipos cuando existan.
+- Sinónimos en Oracle/SQL Server y eventos MySQL.
+- Mostrar definición/DDL y preparar CREATE, ALTER y DROP.
+
+Editor y ejecución
+- Documento SQL normal de VS Code vinculado a perfil/base/esquema.
+- Ejecutar documento completo, selección o sentencia del cursor.
+- SELECT, INSERT, UPDATE, DELETE, MERGE y cualquier DML soportado por el motor.
+- CREATE, ALTER, DROP, TRUNCATE y demás DDL soportado por el motor.
+- PostgreSQL dollar quotes, MySQL DELIMITER, SQL Server GO, Oracle PL/SQL y terminador /, triggers SQLite.
+- Detener documento en el primer error y seleccionar el bloque fallido.
+
+Transacciones y cancelación
+- Auto-commit fuera de una transacción explícita.
+- BEGIN, COMMIT y ROLLBACK por editor.
+- Conexión física reservada durante una transacción.
+- ROLLBACK al cerrar editor/desconectar con transacción abierta.
+- Cancelación por mecanismo nativo del driver.
+- Timeout configurable por perfil.
+
+Resultados
+- Tabla, tipos, NULL, varias tablas de resultados, filas recuperadas/afectadas y duración.
+- Copiar celda, fila y selección.
+- Exportar CSV, JSON y XLSX sin reejecutar la consulta.
+- Historial local configurable.
+
+Política de filas
+- simpleDb.maxRows = 0 por defecto: SIN LÍMITE.
+- El usuario puede elegir un límite mayor que cero si lo necesita.
+- simpleDb.resultPageSize controla páginas de almacenamiento/visualización, no el número total de filas.
+- Simple DB NO inyecta TOP, LIMIT ni FETCH en el SQL del usuario.
+
+Protecciones
+- Confirmación configurable para DROP/TRUNCATE.
+- Aviso configurable para UPDATE/DELETE sin WHERE.
+- Los scripts destructivos generados se abren en el editor; no se ejecutan automáticamente.
