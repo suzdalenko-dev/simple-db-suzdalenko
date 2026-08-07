@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - "version-*"
   pull_request:
 
 permissions:
@@ -11,7 +12,7 @@ permissions:
 
 jobs:
   verify:
-    name: Compilar, analizar, probar y empaquetar
+    name: Analizar, probar y empaquetar JavaScript
     runs-on: ubuntu-latest
 
     steps:
@@ -26,6 +27,9 @@ jobs:
 
       - name: Instalar dependencias
         run: npm ci
+
+      - name: Auditar dependencias de producción
+        run: npm audit --omit=dev
 
       - name: Verificar el proyecto
         run: npm run check

@@ -1,20 +1,34 @@
 import eslint from '@eslint/js';
-import tseslint from 'typescript-eslint';
+import globals from 'globals';
 
-export default tseslint.config(
+export default [
   {
-    ignores: [
-      'coverage/**',
-      'dist/**',
-      'node_modules/**',
-    ],
+    ignores: ['coverage/**', 'node_modules/**'],
   },
   eslint.configs.recommended,
-  ...tseslint.configs.recommended,
   {
-    files: ['src/**/*.ts'],
+    files: ['src/**/*.js', 'scripts/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'commonjs',
+      globals: {
+        ...globals.node,
+      },
+    },
     rules: {
-      '@typescript-eslint/consistent-type-imports': 'error',
+      'no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
     },
   },
-);
+  {
+    files: ['src/test/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.vitest,
+      },
+    },
+  },
+];
