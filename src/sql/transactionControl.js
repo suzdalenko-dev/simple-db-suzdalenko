@@ -14,15 +14,15 @@ function normalizeControlSql(sql, engineId) {
 }
 
 function detectTransactionControl(sql, engineId) {
-  // El worker SQLite sincroniza también BEGIN IMMEDIATE/EXCLUSIVE y SAVEPOINT.
+  // The SQLite worker also synchronizes BEGIN IMMEDIATE/EXCLUSIVE and SAVEPOINT.
   if (engineId === 'sqlite') return null;
   const code = normalizeControlSql(sql, engineId);
 
   if (engineId !== 'oracle') {
     const beginPatterns = {
-      // PostgreSQL permite modos como ISOLATION LEVEL / READ ONLY y MySQL
-      // añade READ ONLY/WRITE o WITH CONSISTENT SNAPSHOT. Se reserva primero
-      // la conexión física y el adaptador ejecuta la sentencia original.
+      // PostgreSQL supports modes such as ISOLATION LEVEL / READ ONLY, while
+      // MySQL adds READ ONLY/WRITE or WITH CONSISTENT SNAPSHOT. Reserve the
+      // physical connection first, then let the adapter execute the original SQL.
       postgresql: /^(?:BEGIN(?:\s+(?:WORK|TRANSACTION))?(?:\s+.+)?|START\s+TRANSACTION(?:\s+.+)?)$/i,
       mysql: /^(?:BEGIN(?:\s+WORK)?|START\s+TRANSACTION(?:\s+.+)?)$/i,
       sqlserver: /^BEGIN\s+TRAN(?:SACTION)?(?:\s+[A-Za-z_][A-Za-z0-9_@$#]*)?$/i,

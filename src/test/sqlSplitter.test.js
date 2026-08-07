@@ -8,20 +8,20 @@ const {
 const { wrapMysqlDefinition } = require('../adapters/mysqlAdapter');
 
 describe('sqlSplitter', () => {
-  it('ignora delimitadores dentro de strings y comentarios', () => {
-    const sql = "SELECT ';' AS value; -- ; oculto\nSELECT 2 /* ; */;";
+  it('ignores delimiters inside strings and comments', () => {
+    const sql = "SELECT ';' AS value; -- ; hidden\nSELECT 2 /* ; */;";
     const statements = splitSqlDocument(sql, 'sqlite');
     expect(statements).toHaveLength(2);
     expect(statements[0].sql).toContain("';'");
     expect(statements[1].sql).toContain('SELECT 2');
   });
 
-  it('mantiene cuerpos dollar-quoted de PostgreSQL como una sentencia', () => {
+  it('keeps PostgreSQL dollar-quoted bodies as one statement', () => {
     const sql = `CREATE OR REPLACE FUNCTION public.demo() RETURNS void
 LANGUAGE plpgsql AS $$
 BEGIN
   PERFORM 1;
-  RAISE NOTICE 'hola;';
+  RAISE NOTICE 'hello;';
 END;
 $$;
 SELECT 42;`;
@@ -31,7 +31,7 @@ SELECT 42;`;
     expect(statements[1].sql).toBe('SELECT 42;');
   });
 
-  it('interpreta GO y GO n en SQL Server sin enviarlos al servidor', () => {
+  it('handles SQL Server GO and GO n without sending them to the server', () => {
     const sql = 'SELECT 1;\nGO 2\nSELECT 2;\nGO\n';
     const statements = splitSqlDocument(sql, 'sqlserver');
     expect(statements.map((entry) => entry.sql)).toEqual([
@@ -41,7 +41,7 @@ SELECT 42;`;
     ]);
   });
 
-  it('interpreta DELIMITER de MySQL y conserva el cuerpo de la rutina', () => {
+  it('handles MySQL DELIMITER and preserves the routine body', () => {
     const sql = `DELIMITER $$
 CREATE PROCEDURE demo()
 BEGIN
@@ -57,7 +57,7 @@ SELECT 3;`;
     expect(statements[1].sql).toBe('SELECT 3;');
   });
 
-  it('reabre SHOW CREATE de rutinas MySQL como un bloque ejecutable único', () => {
+  it('reopens MySQL SHOW CREATE routines as a single executable block', () => {
     const definition = wrapMysqlDefinition(
       'CREATE PROCEDURE `demo`() BEGIN SELECT 1; SELECT 2; END',
     );
@@ -67,13 +67,13 @@ SELECT 3;`;
     expect(statements[0].sql).not.toContain('DELIMITER');
   });
 
-  it('ignora delimitadores dentro de comentarios # de MySQL', () => {
-    const statements = splitSqlDocument('# comentario; oculto\nSELECT 1;', 'mysql');
+  it('ignores delimiters inside MySQL # comments', () => {
+    const statements = splitSqlDocument('# comment; hidden\nSELECT 1;', 'mysql');
     expect(statements).toHaveLength(1);
     expect(statements[0].sql).toContain('SELECT 1;');
   });
 
-  it('mantiene bloques PL/SQL Oracle hasta la barra de terminación', () => {
+  it('keeps Oracle PL/SQL blocks through the terminating slash', () => {
     const sql = `CREATE OR REPLACE PROCEDURE demo AS
 BEGIN
   NULL;
@@ -87,17 +87,17 @@ SELECT 1 FROM dual;`;
     expect(statements[1].sql).toBe('SELECT 1 FROM dual;');
   });
 
-  it('respeta literales q-quoted de Oracle al dividir SQL normal', () => {
-    const sql = "INSERT INTO demo(value) VALUES (q'[uno;dos]'); SELECT 2 FROM dual;";
+  it('respects Oracle q-quoted literals when splitting regular SQL', () => {
+    const sql = "INSERT INTO demo(value) VALUES (q'[one;two]'); SELECT 2 FROM dual;";
     const statements = splitSqlDocument(sql, 'oracle');
     expect(statements).toHaveLength(2);
-    expect(statements[0].sql).toContain("q'[uno;dos]'");
+    expect(statements[0].sql).toContain("q'[one;two]'");
   });
 
-  it('mantiene un CREATE TRIGGER SQLite con sentencias internas', () => {
+  it('keeps a SQLite CREATE TRIGGER with internal statements intact', () => {
     const sql = `CREATE TRIGGER audit_insert AFTER INSERT ON items
 BEGIN
-  INSERT INTO audit(message) VALUES ('uno;dos');
+  INSERT INTO audit(message) VALUES ('one;two');
   UPDATE counters SET value = value + 1;
 END;
 SELECT * FROM items;`;
@@ -107,18 +107,18 @@ SELECT * FROM items;`;
     expect(statements[1].sql).toBe('SELECT * FROM items;');
   });
 
-  it('localiza la sentencia bajo el cursor', () => {
+  it('finds the statement under the cursor', () => {
     const sql = 'SELECT 1;\n\nSELECT 22;\nSELECT 333;';
     const offset = sql.indexOf('22') + 1;
     expect(findStatementAtOffset(sql, 'postgresql', offset).sql).toBe('SELECT 22;');
   });
 
-  it('enmascara literales y comentarios sin cambiar offsets ni saltos de línea', () => {
-    const sql = "SELECT 'secreto;'; -- comentario\nSELECT 1;";
+  it('masks literals and comments without changing offsets or line breaks', () => {
+    const sql = "SELECT 'secret;'; -- comment\nSELECT 1;";
     const mask = createCodeMask(sql);
     expect(mask).toHaveLength(sql.length);
     expect(mask.split('\n')).toHaveLength(sql.split('\n').length);
-    expect(mask).not.toContain('secreto');
-    expect(mask).not.toContain('comentario');
+    expect(mask).not.toContain('secret');
+    expect(mask).not.toContain('comment');
   });
 });

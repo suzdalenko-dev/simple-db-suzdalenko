@@ -22,13 +22,13 @@ function memorySecrets() {
 }
 
 describe('ConnectionStore', () => {
-  it('guarda el perfil separado de la contraseña', async () => {
+  it('stores the profile separately from the password', async () => {
     const state = memoryMemento();
     const secrets = memorySecrets();
     const store = new ConnectionStore(state, secrets);
     const profile = await store.save(
       {
-        name: 'Producción PG',
+        name: 'Production PG',
         engine: 'postgresql',
         host: 'db.internal',
         port: 5432,
@@ -44,7 +44,7 @@ describe('ConnectionStore', () => {
     expect(store.get(profile.id)).not.toHaveProperty('password');
   });
 
-  it('conserva un secreto existente al editar si no se proporciona contraseña', async () => {
+  it('keeps an existing secret when editing without a new password', async () => {
     const store = new ConnectionStore(memoryMemento(), memorySecrets());
     const profile = await store.save(
       { name: 'MySQL', engine: 'mysql', host: 'localhost', port: 3306, user: 'u' },
@@ -56,7 +56,7 @@ describe('ConnectionStore', () => {
     await expect(store.getPassword(profile.id)).resolves.toBe('old-password');
   });
 
-  it('elimina perfil y secreto y evita nombres duplicados', async () => {
+  it('deletes profile and secret and prevents duplicate names', async () => {
     const state = memoryMemento();
     const secrets = memorySecrets();
     const store = new ConnectionStore(state, secrets);
@@ -69,7 +69,7 @@ describe('ConnectionStore', () => {
         { name: 'Oracle', engine: 'sqlite', filePath: '/tmp/other.db' },
         '',
       ),
-    ).rejects.toThrow(/Ya existe/);
+    ).rejects.toThrow(/already exists/i);
     await store.delete(one.id);
     expect(store.get(one.id)).toBeUndefined();
     await expect(store.getPassword(one.id)).resolves.toBe('');

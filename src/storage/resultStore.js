@@ -71,7 +71,7 @@ class ResultStore {
   async startSet(executionId, setIndex, metadata = {}) {
     const execution = this.executions.get(executionId);
     if (!execution) {
-      throw new Error(`Resultado desconocido: ${executionId}`);
+      throw new Error(`Unknown result: ${executionId}`);
     }
 
     const columns = (metadata.columns || []).map((column, index) => ({
@@ -127,7 +127,7 @@ class ResultStore {
     }
     const state = this.setStates.get(this._setKey(executionId, setIndex));
     if (!state) {
-      throw new Error(`Conjunto de resultados desconocido: ${setIndex}`);
+      throw new Error(`Unknown result set: ${setIndex}`);
     }
 
     const normalized = normalizeRows(

@@ -90,7 +90,7 @@ class PostgreSqlAdapter extends BaseAdapter {
 
   async begin(sessionId, context = {}) {
     if (this.transactions.has(sessionId)) {
-      throw new Error('Esta sesión ya tiene una transacción PostgreSQL activa.');
+      throw new Error('This session already has an active PostgreSQL transaction.');
     }
     const acquired = await this._acquireClient(context.database);
     try {
@@ -107,7 +107,7 @@ class PostgreSqlAdapter extends BaseAdapter {
   async commit(sessionId) {
     const transaction = this.transactions.get(sessionId);
     if (!transaction) {
-      throw new Error('No hay una transacción activa en esta sesión.');
+      throw new Error('There is no active transaction in this session.');
     }
     try {
       await transaction.client.query('COMMIT');

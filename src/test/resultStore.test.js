@@ -23,7 +23,7 @@ describe('ResultStore', () => {
     await fs.rm(temporary, { recursive: true, force: true });
   });
 
-  it('pagina en disco sin truncar el número de filas', async () => {
+  it('pages results on disk without truncating the row count', async () => {
     await store.createExecution('exec-1', { connectionName: 'test' });
     await store.startSet('exec-1', 0, {
       columns: [{ name: 'id', type: 'INTEGER' }],
@@ -42,7 +42,7 @@ describe('ResultStore', () => {
     expect(allRows).toEqual([[1], [2], [3], [4], [5]]);
   });
 
-  it('permite reconfigurar el tamaño de página para ejecuciones nuevas', async () => {
+  it('allows page size to be reconfigured for new executions', async () => {
     store.configure({ pageSize: 3, maxCellCharacters: 5 });
     await store.createExecution('exec-2', {});
     await store.startSet('exec-2', 0, { columns: [{ name: 'text' }] });

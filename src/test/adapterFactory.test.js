@@ -11,7 +11,7 @@ const profiles = [
 ];
 
 describe('adapter factory contract', () => {
-  it.each(profiles)('carga el adaptador $engine y cumple el contrato común', (profile) => {
+  it.each(profiles)('loads the $engine adapter and satisfies the common contract', (profile) => {
     const adapter = createAdapter(profile, 'password');
     for (const method of [
       'connect',
@@ -35,7 +35,7 @@ describe('adapter factory contract', () => {
     }
   });
 
-  it('rechaza motores desconocidos', () => {
-    expect(() => createAdapter({ engine: 'unknown' }, '')).toThrow(/no soportado/i);
+  it('rejects unknown engines', () => {
+    expect(() => createAdapter({ engine: 'unknown' }, '')).toThrow(/unsupported database engine/i);
   });
 });

@@ -36,7 +36,7 @@ class QueryRunner {
     const selection = editor.selection;
     if (mode === 'selection') {
       if (selection.isEmpty) {
-        throw new Error('Selecciona primero el SQL que quieres ejecutar.');
+        throw new Error('Select the SQL you want to execute first.');
       }
       const selected = editor.document.getText(selection);
       return {
@@ -76,17 +76,17 @@ class QueryRunner {
       const safety = classifySqlSafety(statement.sql, engineId);
       let warning = '';
       if (safety.destructive && config.confirmDestructiveQueries) {
-        warning = `${safety.operation} puede eliminar o truncar objetos/datos. ¿Ejecutar?`;
+        warning = `${safety.operation} can delete or truncate objects/data. Execute it?`;
       } else if (safety.unsafeDml && config.warnUnsafeDml) {
-        warning = `${safety.operation} no contiene cláusula WHERE. Puede afectar a todas las filas. ¿Ejecutar?`;
+        warning = `${safety.operation} has no WHERE clause. It may affect every row. Execute it?`;
       }
       if (!warning) continue;
       const answer = await vscode.window.showWarningMessage(
         warning,
         { modal: true },
-        'Ejecutar',
+        'Execute',
       );
-      if (answer !== 'Ejecutar') return false;
+      if (answer !== 'Execute') return false;
     }
     return true;
   }
@@ -133,20 +133,20 @@ class QueryRunner {
   async run(mode = 'current') {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
-      throw new Error('No hay un editor SQL activo.');
+      throw new Error('There is no active SQL editor.');
     }
 
     const session = await this.editorSessionManager.ensureActiveSession();
     if (!session) return null;
     if (session.runningExecutionId) {
-      throw new Error('Ya hay una consulta en ejecución en este editor. Cancélala o espera a que termine.');
+      throw new Error('A query is already running in this editor. Cancel it or wait for it to finish.');
     }
     const profile = this.connectionStore.get(session.profileId);
-    if (!profile) throw new Error('La conexión vinculada al editor ya no existe.');
+    if (!profile) throw new Error('The connection linked to this editor no longer exists.');
 
     const extracted = this._statements(editor, profile.engine, mode);
     if (extracted.statements.length === 0) {
-      throw new Error('No se ha encontrado ninguna sentencia SQL ejecutable.');
+      throw new Error('No executable SQL statement was found.');
     }
     const config = this._configuration();
     if (!(await this._confirmSafety(extracted.statements, profile.engine, config))) {
@@ -202,7 +202,7 @@ class QueryRunner {
               const statement = extracted.statements[index];
               currentStatement = statement;
               progress.report({
-                message: `sentencia ${index + 1}/${extracted.statements.length}`,
+                message: `statement ${index + 1}/${extracted.statements.length}`,
               });
 
               const safety = classifySqlSafety(statement.sql, profile.engine);
@@ -234,7 +234,7 @@ class QueryRunner {
                   statementIndex: index,
                   sql: statement.sql,
                   durationMs: Date.now() - statementStarted,
-                  message: 'BEGIN completado. Transacción activa en este editor.',
+                  message: 'BEGIN completed. Transaction active in this editor.',
                 });
                 continue;
               }
@@ -247,7 +247,7 @@ class QueryRunner {
                   session.transactionNeedsRollback
                 ) {
                   throw new Error(
-                    'La transacción tuvo un error. Ejecuta ROLLBACK antes de COMMIT.',
+                    'The transaction encountered an error. Run ROLLBACK before COMMIT.',
                   );
                 }
                 await this.connectionManager[transactionControl](
@@ -259,7 +259,7 @@ class QueryRunner {
                   statementIndex: index,
                   sql: statement.sql,
                   durationMs: Date.now() - statementStarted,
-                  message: `${transactionControl.toUpperCase()} completado.`,
+                  message: `${transactionControl.toUpperCase()} completed.`,
                 });
                 continue;
               }
@@ -296,13 +296,13 @@ class QueryRunner {
                     sql: statement.sql,
                     affectedRows,
                     durationMs: Date.now() - statementStarted,
-                    message: `${result.command || safety.operation || 'SQL'} ejecutado correctamente${affectedRows ? ` · ${affectedRows} filas afectadas` : ''}.`,
+                    message: `${result.command || safety.operation || 'SQL'} executed successfully${affectedRows ? ` · ${affectedRows} rows affected` : ''}.`,
                   });
                 }
               } catch (error) {
                 if (timedOut) {
                   const timeoutError = new Error(
-                    `La consulta superó el tiempo máximo configurado (${queryTimeoutMs} ms).`,
+                    `The query exceeded the configured timeout (${queryTimeoutMs} ms).`,
                   );
                   timeoutError.code = 'SIMPLE_DB_TIMEOUT';
                   throw timeoutError;
@@ -336,7 +336,7 @@ class QueryRunner {
       }
       await this.resultStore.addMessageSet(executionId, nextGlobalSet(), {
         kind: cancelled ? 'message' : 'error',
-        message: cancelled ? 'Consulta cancelada.' : `Error: ${error.message}`,
+        message: cancelled ? 'Query cancelled.' : `Error: ${error.message}`,
       });
     } finally {
       this.editorSessionManager.setRunning(session, null);
@@ -380,7 +380,7 @@ class QueryRunner {
     await this.resultPanel.show(executionId);
     if (!failure) {
       vscode.window.setStatusBarMessage(
-        `$(check) Simple DB: ${totalRows} filas${totalAffectedRows ? ` · ${totalAffectedRows} afectadas` : ''} · ${durationMs} ms`,
+        `$(check) Simple DB: ${totalRows} rows${totalAffectedRows ? ` · ${totalAffectedRows} affected` : ''} · ${durationMs} ms`,
         5000,
       );
     } else if (!cancelled) {

@@ -41,18 +41,18 @@ const OBJECT_TYPES_BY_ENGINE = Object.freeze({
 });
 
 const OBJECT_LABELS = Object.freeze({
-  table: 'Tabla',
-  view: 'Vista',
-  materializedView: 'Vista materializada',
-  procedure: 'Procedimiento',
-  function: 'Función',
+  table: 'Table',
+  view: 'View',
+  materializedView: 'Materialized View',
+  procedure: 'Procedure',
+  function: 'Function',
   package: 'Package',
-  index: 'Índice',
+  index: 'Index',
   trigger: 'Trigger',
-  sequence: 'Secuencia',
-  type: 'Tipo',
-  synonym: 'Sinónimo',
-  event: 'Evento',
+  sequence: 'Sequence',
+  type: 'Type',
+  synonym: 'Synonym',
+  event: 'Event',
 });
 
 function objectTypesForEngine(engineId) {
@@ -67,8 +67,8 @@ function createTemplate(
   options = {},
 ) {
   const q = quoteIdentifier;
-  const tablePlaceholder = q('tabla');
-  const columnPlaceholder = q('columna');
+  const tablePlaceholder = q('table');
+  const columnPlaceholder = q('column');
 
   if (objectType === 'table') {
     const identity = {
@@ -79,7 +79,7 @@ function createTemplate(
       sqlite: 'INTEGER PRIMARY KEY',
     }[engineId] || 'INTEGER PRIMARY KEY';
     const textType = engineId === 'oracle' ? 'VARCHAR2(255)' : 'VARCHAR(255)';
-    return `CREATE TABLE ${qualifiedName} (\n  ${q('id')} ${identity},\n  ${q('nombre')} ${textType} NOT NULL\n);`;
+    return `CREATE TABLE ${qualifiedName} (\n  ${q('id')} ${identity},\n  ${q('name')} ${textType} NOT NULL\n);`;
   }
 
   if (objectType === 'view') {
@@ -96,8 +96,8 @@ function createTemplate(
   }
 
   if (objectType === 'index') {
-    // PostgreSQL, MySQL y SQL Server determinan el esquema del índice por la
-    // tabla y no aceptan un nombre de índice cualificado en CREATE INDEX.
+    // PostgreSQL, MySQL, and SQL Server derive the index schema from the table
+    // and do not accept a schema-qualified index name in CREATE INDEX.
     const indexName = ['postgresql', 'mysql', 'sqlserver'].includes(engineId)
       ? options.identifierName || qualifiedName
       : qualifiedName;
@@ -115,18 +115,18 @@ function createTemplate(
     const isFunction = objectType === 'function';
     if (engineId === 'postgresql') {
       return isFunction
-        ? `CREATE OR REPLACE FUNCTION ${qualifiedName}()\nRETURNS void\nLANGUAGE plpgsql\nAS $$\nBEGIN\n  -- implementación\nEND;\n$$;`
-        : `CREATE OR REPLACE PROCEDURE ${qualifiedName}()\nLANGUAGE plpgsql\nAS $$\nBEGIN\n  -- implementación\nEND;\n$$;`;
+        ? `CREATE OR REPLACE FUNCTION ${qualifiedName}()\nRETURNS void\nLANGUAGE plpgsql\nAS $$\nBEGIN\n  -- implementation\nEND;\n$$;`
+        : `CREATE OR REPLACE PROCEDURE ${qualifiedName}()\nLANGUAGE plpgsql\nAS $$\nBEGIN\n  -- implementation\nEND;\n$$;`;
     }
     if (engineId === 'mysql') {
       return isFunction
         ? `DELIMITER $$\nCREATE FUNCTION ${qualifiedName}()\nRETURNS INT\nDETERMINISTIC\nBEGIN\n  RETURN 0;\nEND$$\nDELIMITER ;`
-        : `DELIMITER $$\nCREATE PROCEDURE ${qualifiedName}()\nBEGIN\n  -- implementación\nEND$$\nDELIMITER ;`;
+        : `DELIMITER $$\nCREATE PROCEDURE ${qualifiedName}()\nBEGIN\n  -- implementation\nEND$$\nDELIMITER ;`;
     }
     if (engineId === 'sqlserver') {
       return isFunction
         ? `CREATE OR ALTER FUNCTION ${qualifiedName}()\nRETURNS INT\nAS\nBEGIN\n  RETURN 0;\nEND;`
-        : `CREATE OR ALTER PROCEDURE ${qualifiedName}\nAS\nBEGIN\n  SET NOCOUNT ON;\n  -- implementación\nEND;`;
+        : `CREATE OR ALTER PROCEDURE ${qualifiedName}\nAS\nBEGIN\n  SET NOCOUNT ON;\n  -- implementation\nEND;`;
     }
     if (engineId === 'oracle') {
       return isFunction
@@ -136,22 +136,22 @@ function createTemplate(
   }
 
   if (objectType === 'package' && engineId === 'oracle') {
-    return `CREATE OR REPLACE PACKAGE ${qualifiedName} AS\n  PROCEDURE ejemplo;\nEND;\n/\n\nCREATE OR REPLACE PACKAGE BODY ${qualifiedName} AS\n  PROCEDURE ejemplo AS\n  BEGIN\n    NULL;\n  END ejemplo;\nEND;\n/`;
+    return `CREATE OR REPLACE PACKAGE ${qualifiedName} AS\n  PROCEDURE example;\nEND;\n/\n\nCREATE OR REPLACE PACKAGE BODY ${qualifiedName} AS\n  PROCEDURE example AS\n  BEGIN\n    NULL;\n  END example;\nEND;\n/`;
   }
 
   if (objectType === 'trigger') {
     if (engineId === 'sqlite') {
-      return `CREATE TRIGGER ${qualifiedName}\nAFTER INSERT ON ${tablePlaceholder}\nBEGIN\n  -- sentencia SQL;\n  SELECT 1;\nEND;`;
+      return `CREATE TRIGGER ${qualifiedName}\nAFTER INSERT ON ${tablePlaceholder}\nBEGIN\n  -- SQL statement;\n  SELECT 1;\nEND;`;
     }
     if (engineId === 'postgresql') {
       const triggerName = options.identifierName || qualifiedName;
-      return `-- PostgreSQL requiere una función de trigger existente.\nCREATE TRIGGER ${triggerName}\nBEFORE INSERT ON ${tablePlaceholder}\nFOR EACH ROW\nEXECUTE FUNCTION ${q('funcion_trigger')}();`;
+      return `-- PostgreSQL requires an existing trigger function.\nCREATE TRIGGER ${triggerName}\nBEFORE INSERT ON ${tablePlaceholder}\nFOR EACH ROW\nEXECUTE FUNCTION ${q('trigger_function')}();`;
     }
     if (engineId === 'mysql') {
-      return `DELIMITER $$\nCREATE TRIGGER ${qualifiedName}\nBEFORE INSERT ON ${tablePlaceholder}\nFOR EACH ROW\nBEGIN\n  -- implementación\nEND$$\nDELIMITER ;`;
+      return `DELIMITER $$\nCREATE TRIGGER ${qualifiedName}\nBEFORE INSERT ON ${tablePlaceholder}\nFOR EACH ROW\nBEGIN\n  -- implementation\nEND$$\nDELIMITER ;`;
     }
     if (engineId === 'sqlserver') {
-      return `CREATE OR ALTER TRIGGER ${qualifiedName}\nON ${tablePlaceholder}\nAFTER INSERT\nAS\nBEGIN\n  SET NOCOUNT ON;\n  -- implementación\nEND;`;
+      return `CREATE OR ALTER TRIGGER ${qualifiedName}\nON ${tablePlaceholder}\nAFTER INSERT\nAS\nBEGIN\n  SET NOCOUNT ON;\n  -- implementation\nEND;`;
     }
     if (engineId === 'oracle') {
       return `CREATE OR REPLACE TRIGGER ${qualifiedName}\nBEFORE INSERT ON ${tablePlaceholder}\nFOR EACH ROW\nBEGIN\n  NULL;\nEND;\n/`;
@@ -160,13 +160,13 @@ function createTemplate(
 
   if (objectType === 'type') {
     if (engineId === 'postgresql') {
-      return `CREATE TYPE ${qualifiedName} AS (\n  ${q('valor')} TEXT\n);`;
+      return `CREATE TYPE ${qualifiedName} AS (\n  ${q('value')} TEXT\n);`;
     }
     if (engineId === 'sqlserver') {
-      return `CREATE TYPE ${qualifiedName} AS TABLE (\n  ${q('valor')} NVARCHAR(255) NOT NULL\n);`;
+      return `CREATE TYPE ${qualifiedName} AS TABLE (\n  ${q('value')} NVARCHAR(255) NOT NULL\n);`;
     }
     if (engineId === 'oracle') {
-      return `CREATE OR REPLACE TYPE ${qualifiedName} AS OBJECT (\n  ${q('valor')} VARCHAR2(255)\n);\n/`;
+      return `CREATE OR REPLACE TYPE ${qualifiedName} AS OBJECT (\n  ${q('value')} VARCHAR2(255)\n);\n/`;
     }
   }
 
@@ -175,10 +175,10 @@ function createTemplate(
   }
 
   if (objectType === 'event' && engineId === 'mysql') {
-    return `DELIMITER $$\nCREATE EVENT ${qualifiedName}\nON SCHEDULE EVERY 1 DAY\nDO\nBEGIN\n  -- implementación\nEND$$\nDELIMITER ;`;
+    return `DELIMITER $$\nCREATE EVENT ${qualifiedName}\nON SCHEDULE EVERY 1 DAY\nDO\nBEGIN\n  -- implementation\nEND$$\nDELIMITER ;`;
   }
 
-  throw new Error(`No hay plantilla CREATE para ${engineId}/${objectType}.`);
+  throw new Error(`No CREATE template is available for ${engineId}/${objectType}.`);
 }
 
 function alterTemplate(engineId, objectType, qualifiedName, options = {}) {
@@ -195,19 +195,19 @@ function alterTemplate(engineId, objectType, qualifiedName, options = {}) {
     }
     if (engineId === 'mysql') return `ALTER VIEW ${qualifiedName} AS\n-- SELECT ...;`;
     if (engineId === 'sqlite') {
-      return `-- SQLite no implementa ALTER VIEW. Conserva la definición, elimina la vista y créala de nuevo.\n-- DROP VIEW ${qualifiedName};\n-- CREATE VIEW ${qualifiedName} AS SELECT ...;`;
+      return `-- SQLite does not implement ALTER VIEW. Keep the definition, drop the view, and create it again.\n-- DROP VIEW ${qualifiedName};\n-- CREATE VIEW ${qualifiedName} AS SELECT ...;`;
     }
   }
   if (objectType === 'materializedView') {
     if (engineId === 'oracle') {
       return `ALTER MATERIALIZED VIEW ${qualifiedName}\n  -- COMPILE;`;
     }
-    return `ALTER MATERIALIZED VIEW ${qualifiedName}\n  -- RENAME TO nuevo_nombre;`;
+    return `ALTER MATERIALIZED VIEW ${qualifiedName}\n  -- RENAME TO new_name;`;
   }
   if (objectType === 'procedure' || objectType === 'function') {
     const keyword = objectType.toUpperCase();
     if (engineId === 'postgresql') return `ALTER ${keyword} ${qualifiedName}()\n  -- ...;`;
-    if (engineId === 'sqlserver') return `CREATE OR ALTER ${keyword} ${qualifiedName}\nAS\n-- implementación`;
+    if (engineId === 'sqlserver') return `CREATE OR ALTER ${keyword} ${qualifiedName}\nAS\n-- implementation`;
     if (engineId === 'oracle') return `ALTER ${keyword} ${qualifiedName} COMPILE;`;
     if (engineId === 'mysql') return `ALTER ${keyword} ${qualifiedName}\n  -- COMMENT '...';`;
   }
@@ -220,18 +220,18 @@ function alterTemplate(engineId, objectType, qualifiedName, options = {}) {
   if (objectType === 'event' && engineId === 'mysql') return `ALTER EVENT ${qualifiedName}\n  -- ...;`;
   if (objectType === 'type') {
     if (engineId === 'postgresql') {
-      return `ALTER TYPE ${qualifiedName}\n  -- ADD VALUE 'nuevo_valor';`;
+      return `ALTER TYPE ${qualifiedName}\n  -- ADD VALUE 'new_value';`;
     }
     if (engineId === 'oracle') {
       return `ALTER TYPE ${qualifiedName} COMPILE;`;
     }
     if (engineId === 'sqlserver') {
-      return `-- SQL Server no ofrece ALTER TYPE para cambiar la definición de un tipo.\n-- Revisa dependencias y utiliza DROP TYPE + CREATE TYPE para ${qualifiedName}.`;
+      return `-- SQL Server does not support ALTER TYPE for changing a type definition.\n-- Review dependencies and use DROP TYPE + CREATE TYPE for ${qualifiedName}.`;
     }
   }
   if (objectType === 'index') {
     if (engineId === 'postgresql') {
-      return `ALTER INDEX ${qualifiedName}\n  -- RENAME TO nuevo_nombre;`;
+      return `ALTER INDEX ${qualifiedName}\n  -- RENAME TO new_name;`;
     }
     if (engineId === 'oracle') {
       return `ALTER INDEX ${qualifiedName} REBUILD;`;
@@ -240,27 +240,27 @@ function alterTemplate(engineId, objectType, qualifiedName, options = {}) {
       return `ALTER INDEX ${identifierName} ON ${tableQualifiedName}\n  REBUILD;`;
     }
     if (engineId === 'mysql' && tableQualifiedName) {
-      return `-- MySQL 8+: cambia visibilidad; otros cambios se hacen con ALTER TABLE.\nALTER TABLE ${tableQualifiedName}\n  ALTER INDEX ${identifierName} VISIBLE;`;
+      return `-- MySQL 8+: change visibility; other changes are made with ALTER TABLE.\nALTER TABLE ${tableQualifiedName}\n  ALTER INDEX ${identifierName} VISIBLE;`;
     }
-    return `-- Este motor no ofrece un ALTER INDEX genérico seguro para ${qualifiedName}.\n-- Consulta la definición y utiliza la operación específica del motor.`;
+    return `-- This engine does not provide a safe generic ALTER INDEX for ${qualifiedName}.\n-- Inspect the definition and use the engine-specific operation.`;
   }
   if (objectType === 'trigger') {
     if (engineId === 'postgresql' && tableQualifiedName) {
-      return `ALTER TRIGGER ${identifierName} ON ${tableQualifiedName}\n  -- RENAME TO nuevo_nombre;`;
+      return `ALTER TRIGGER ${identifierName} ON ${tableQualifiedName}\n  -- RENAME TO new_name;`;
     }
     if (engineId === 'oracle') {
       return `ALTER TRIGGER ${qualifiedName} COMPILE;\n-- ALTER TRIGGER ${qualifiedName} ENABLE;`;
     }
     if (engineId === 'sqlserver' && tableQualifiedName) {
-      return `ALTER TRIGGER ${qualifiedName}\nON ${tableQualifiedName}\nAFTER INSERT\nAS\nBEGIN\n  SET NOCOUNT ON;\n  -- implementación\nEND;`;
+      return `ALTER TRIGGER ${qualifiedName}\nON ${tableQualifiedName}\nAFTER INSERT\nAS\nBEGIN\n  SET NOCOUNT ON;\n  -- implementation\nEND;`;
     }
     if (['mysql', 'sqlite'].includes(engineId)) {
-      return `-- ${engineId === 'mysql' ? 'MySQL' : 'SQLite'} no permite alterar el cuerpo de un trigger directamente.\n-- Consulta su definición y utiliza DROP TRIGGER + CREATE TRIGGER para ${qualifiedName}.`;
+      return `-- ${engineId === 'mysql' ? 'MySQL' : 'SQLite'} does not allow a trigger body to be altered directly.\n-- Inspect its definition and use DROP TRIGGER + CREATE TRIGGER for ${qualifiedName}.`;
     }
-    return `-- Edita la definición del trigger ${qualifiedName} con la sintaxis específica del motor.`;
+    return `-- Edit the ${qualifiedName} trigger definition using engine-specific syntax.`;
   }
   if (objectType === 'synonym') {
-    return `-- Los sinónimos se sustituyen normalmente con DROP + CREATE.\n-- Objeto: ${qualifiedName}`;
+    return `-- Synonyms are normally replaced with DROP + CREATE.\n-- Object: ${qualifiedName}`;
   }
   return `-- ALTER ${OBJECT_LABELS[objectType] || objectType}: ${qualifiedName}`;
 }
@@ -281,7 +281,7 @@ function dropTemplate(engineId, objectType, qualifiedName, options = {}) {
     event: 'EVENT',
   };
   const keyword = keywords[objectType];
-  if (!keyword) throw new Error(`Tipo de objeto no válido: ${objectType}`);
+  if (!keyword) throw new Error(`Invalid object type: ${objectType}`);
 
   if (objectType === 'index' && options.tableQualifiedName) {
     if (engineId === 'mysql' && String(options.objectName || '').toUpperCase() === 'PRIMARY') {

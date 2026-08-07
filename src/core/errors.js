@@ -1,7 +1,7 @@
 'use strict';
 
 class QueryCancelledError extends Error {
-  constructor(message = 'Consulta cancelada por el usuario.') {
+  constructor(message = 'Query cancelled by the user.') {
     super(message);
     this.name = 'QueryCancelledError';
     this.code = 'SIMPLE_DB_CANCELLED';

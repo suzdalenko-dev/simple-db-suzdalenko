@@ -54,7 +54,7 @@ describe('SqliteAdapter integration', () => {
     return { result, sink };
   }
 
-  it('crea, modifica y consulta datos sin límite de filas por defecto', async () => {
+  it('creates, modifies, and queries data with no default row limit', async () => {
     await execute('CREATE TABLE items (id INTEGER PRIMARY KEY, name TEXT NOT NULL);');
     await execute("INSERT INTO items(name) VALUES ('a'), ('b'), ('c'), ('d'), ('e');");
     const { result, sink } = await execute('SELECT id, name FROM items ORDER BY id;');
@@ -65,7 +65,7 @@ describe('SqliteAdapter integration', () => {
     expect(sink.sets[0].rows[4][1]).toBe('e');
   });
 
-  it('sólo limita filas cuando maxRows es mayor que cero', async () => {
+  it('limits rows only when maxRows is greater than zero', async () => {
     await execute('CREATE TABLE numbers (value INTEGER);');
     await execute('INSERT INTO numbers VALUES (1),(2),(3),(4);');
     const { result, sink } = await execute('SELECT value FROM numbers ORDER BY value;', 2);
@@ -74,14 +74,14 @@ describe('SqliteAdapter integration', () => {
     expect(sink.sets[0].rows).toEqual([[1], [2]]);
   });
 
-  it('conserva enteros SQLite de 64 bits como BigInt hasta la normalización', async () => {
+  it('keeps 64-bit SQLite integers as BigInt until normalization', async () => {
     await execute('CREATE TABLE big_numbers (value INTEGER);');
     await execute('INSERT INTO big_numbers VALUES (9223372036854775807);');
     const { sink } = await execute('SELECT value FROM big_numbers;');
     expect(sink.sets[0].rows[0][0]).toBe(9223372036854775807n);
   });
 
-  it('hace ROLLBACK y COMMIT de transacciones explícitas', async () => {
+  it('ROLLBACKs and COMMITs explicit transactions', async () => {
     await execute('CREATE TABLE tx (value TEXT);');
     await adapter.begin('session');
     await execute("INSERT INTO tx VALUES ('rollback');");
@@ -94,7 +94,7 @@ describe('SqliteAdapter integration', () => {
     expect((await execute('SELECT COUNT(*) AS total FROM tx;')).sink.sets[0].rows[0][0]).toBe(1);
   });
 
-  it('sincroniza BEGIN/ROLLBACK escritos como SQL y aísla otros editores', async () => {
+  it('synchronizes SQL BEGIN/ROLLBACK and isolates other editors', async () => {
     await execute('CREATE TABLE raw_tx (value TEXT);');
     await execute('BEGIN;');
     expect(adapter.hasTransaction('session')).toBe(true);
@@ -106,14 +106,14 @@ describe('SqliteAdapter integration', () => {
         pageSize: 2,
         sink: otherSink,
       }),
-    ).rejects.toThrow(/otro editor/i);
-    await execute("INSERT INTO raw_tx VALUES ('no guardar');");
+    ).rejects.toThrow(/another editor/i);
+    await execute("INSERT INTO raw_tx VALUES ('do not save');");
     await execute('ROLLBACK;');
     expect(adapter.hasTransaction('session')).toBe(false);
     expect((await execute('SELECT COUNT(*) FROM raw_tx;')).sink.sets[0].rows[0][0]).toBe(0);
   });
 
-  it('mantiene foreign_keys activo después de persistir el archivo', async () => {
+  it('keeps foreign_keys enabled after persisting the file', async () => {
     await execute('CREATE TABLE parent (id INTEGER PRIMARY KEY);');
     await execute('CREATE TABLE child (parent_id INTEGER REFERENCES parent(id));');
     await expect(execute('INSERT INTO child(parent_id) VALUES (999);')).rejects.toThrow(
@@ -121,29 +121,29 @@ describe('SqliteAdapter integration', () => {
     );
   });
 
-  it('se niega a sobrescribir un archivo modificado externamente', async () => {
+  it('refuses to overwrite a file modified externally', async () => {
     await execute('CREATE TABLE conflict (id INTEGER);');
     const filename = path.join(temporary, 'database.sqlite');
     const stat = await fs.stat(filename);
     const changed = new Date(stat.mtimeMs + 5000);
     await fs.utimes(filename, changed, changed);
     await expect(execute('INSERT INTO conflict VALUES (1);')).rejects.toThrow(
-      /modificado por otra aplicación/i,
+      /modified by another application/i,
     );
   });
 
-  it('obliga a reconectar también antes de leer si el archivo cambió externamente', async () => {
+  it('requires reconnecting before reads when the file changed externally', async () => {
     await execute('CREATE TABLE stale_guard (id INTEGER);');
     const filename = path.join(temporary, 'database.sqlite');
     const stat = await fs.stat(filename);
     const changed = new Date(stat.mtimeMs + 5000);
     await fs.utimes(filename, changed, changed);
     await expect(execute('SELECT * FROM stale_guard;')).rejects.toThrow(
-      /modificado por otra aplicación/i,
+      /modified by another application/i,
     );
   });
 
-  it('rechaza un WAL activo para no cargar una instantánea incompleta', async () => {
+  it('rejects an active WAL to avoid loading an incomplete snapshot', async () => {
     await execute('CREATE TABLE wal_guard (id INTEGER);');
     const filename = path.join(temporary, 'database.sqlite');
     await adapter.disconnect();
@@ -159,10 +159,10 @@ describe('SqliteAdapter integration', () => {
       },
       '',
     );
-    await expect(adapter.connect()).rejects.toThrow(/WAL activo/i);
+    await expect(adapter.connect()).rejects.toThrow(/active WAL/i);
   });
 
-  it('explora tablas, columnas, índices, triggers y sus definiciones', async () => {
+  it('explores tables, columns, indexes, triggers, and their definitions', async () => {
     await execute('CREATE TABLE items (id INTEGER PRIMARY KEY, name TEXT NOT NULL);');
     await execute('CREATE INDEX idx_items_name ON items(name);');
     await execute(`CREATE TRIGGER trg_items AFTER INSERT ON items

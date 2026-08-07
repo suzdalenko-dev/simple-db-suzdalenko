@@ -5,8 +5,8 @@ const { BaseAdapter } = require('./baseAdapter');
 const { normalizeDatabaseError } = require('../core/errors');
 const { looksLikeRowQuery } = require('../sql/safety');
 
-// NUMBER como string evita perder precisión al cruzar el límite seguro de
-// enteros de JavaScript; ResultStore conserva después el valor textual exacto.
+// Returning NUMBER as a string avoids precision loss beyond JavaScript's safe
+// integer range; ResultStore then preserves the exact textual value.
 const stringFetchTypes = [
   oracledb.DB_TYPE_NUMBER,
   oracledb.DB_TYPE_CLOB,
@@ -103,7 +103,7 @@ class OracleAdapter extends BaseAdapter {
 
   async begin(sessionId, context = {}) {
     if (this.transactions.has(sessionId)) {
-      throw new Error('Esta sesión ya tiene una transacción Oracle activa.');
+      throw new Error('This session already has an active Oracle transaction.');
     }
     let connection;
     try {
@@ -119,7 +119,7 @@ class OracleAdapter extends BaseAdapter {
   async commit(sessionId) {
     const connection = this.transactions.get(sessionId);
     if (!connection) {
-      throw new Error('No hay una transacción activa en esta sesión.');
+      throw new Error('There is no active transaction in this session.');
     }
     try {
       await connection.commit();

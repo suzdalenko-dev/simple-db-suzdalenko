@@ -107,7 +107,7 @@ class MySqlAdapter extends BaseAdapter {
 
   async begin(sessionId, context = {}) {
     if (this.transactions.has(sessionId)) {
-      throw new Error('Esta sesión ya tiene una transacción MySQL activa.');
+      throw new Error('This session already has an active MySQL transaction.');
     }
     const connection = await this._getConnection();
     try {
@@ -127,7 +127,7 @@ class MySqlAdapter extends BaseAdapter {
   async commit(sessionId) {
     const connection = this.transactions.get(sessionId);
     if (!connection) {
-      throw new Error('No hay una transacción activa en esta sesión.');
+      throw new Error('There is no active transaction in this session.');
     }
     try {
       await callbackPromise((done) => connection.commit(done));

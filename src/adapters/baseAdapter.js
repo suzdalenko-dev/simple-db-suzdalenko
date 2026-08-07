@@ -31,7 +31,7 @@ class BaseAdapter {
       try {
         await this.rollback(sessionId);
       } catch (_error) {
-        // El cierre posterior del pool/conexión libera también la transacción.
+        // Closing the pool/connection later also releases the transaction.
       }
     }
   }
@@ -41,7 +41,7 @@ class BaseAdapter {
       try {
         await this.cancel(executionId);
       } catch (_error) {
-        // Se continúa con la limpieza del resto de recursos.
+        // Continue cleaning up the remaining resources.
       }
     }
   }

@@ -49,13 +49,13 @@ class ExportService {
     const metadata = this.resultStore.getMetadata(executionId);
     const set = metadata?.sets?.[setIndex];
     if (!set || set.kind !== 'rows') {
-      throw new Error('El conjunto de resultados ya no está disponible para exportar.');
+      throw new Error('The result set is no longer available for export.');
     }
 
     const extension = format === 'xlsx' ? 'xlsx' : format;
     const defaultName = `simple-db-${new Date().toISOString().replaceAll(':', '-')}.${extension}`;
     const uri = await vscode.window.showSaveDialog({
-      title: `Exportar resultado como ${format.toUpperCase()}`,
+      title: `Export Result as ${format.toUpperCase()}`,
       defaultUri: vscode.Uri.file(path.join(process.cwd(), defaultName)),
       filters: {
         [format.toUpperCase()]: [extension],
@@ -70,7 +70,7 @@ class ExportService {
     } else if (format === 'xlsx') {
       await this._writeXlsx(uri.fsPath, executionId, setIndex, set);
     } else {
-      throw new Error(`Formato de exportación no soportado: ${format}`);
+      throw new Error(`Unsupported export format: ${format}`);
     }
     return uri.fsPath;
   }
@@ -130,7 +130,7 @@ class ExportService {
       useStyles: true,
       useSharedStrings: false,
     });
-    const sheet = workbook.addWorksheet('Resultado');
+    const sheet = workbook.addWorksheet('Result');
     const header = sheet.addRow(set.columns.map((column) => column.name));
     header.font = { bold: true };
     header.commit();
