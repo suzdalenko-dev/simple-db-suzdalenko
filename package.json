@@ -1,10 +1,11 @@
 {
   "name": "simple-db-suzdalenko",
-  "displayName": "Simple DB",
-  "description": "Cliente SQL para SQLite, PostgreSQL, MySQL, SQL Server y Oracle dentro de Visual Studio Code.",
+  "displayName": "Simple DB - SQL Client for SQLite, MySQL, PostgreSQL, SQL Server & Oracle",
+  "description": "SQL client and database editor for SQLite, MySQL, PostgreSQL, SQL Server (MSSQL) and Oracle. Browse database objects, run queries, manage DDL and export results.",
   "version": "0.1.1",
   "publisher": "suzdalenko-dev",
   "license": "MIT",
+  "icon": "resources/simple-db-marketplace.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/suzdalenko-dev/simple-db-suzdalenko.git"
@@ -24,13 +25,31 @@
     "Data Science"
   ],
   "keywords": [
-    "database",
     "sql",
+    "database",
+    "sql client",
+    "database client",
+    "sql editor",
+    "database editor",
+    "query editor",
+    "database explorer",
     "sqlite",
-    "postgresql",
+    "sqlite client",
     "mysql",
-    "sql-server",
-    "oracle"
+    "mysql client",
+    "postgresql",
+    "postgres",
+    "postgresql client",
+    "oracle",
+    "oracle database",
+    "oracle client",
+    "plsql",
+    "pl/sql",
+    "sql server",
+    "mssql",
+    "t-sql",
+    "ddl",
+    "schema explorer"
   ],
   "activationEvents": [
     "onView:simpleDb.connections",
