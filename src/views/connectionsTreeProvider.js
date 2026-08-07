@@ -34,17 +34,17 @@ class ConnectionsTreeProvider {
         );
         item.id = `simpleDb.engine.${node.engineId}`;
         item.contextValue = 'simpleDb.engine';
-        item.description = `${count} conexión${count === 1 ? '' : 'es'}`;
+        item.description = `${count} connection${count === 1 ? '' : 's'}`;
         item.iconPath = new vscode.ThemeIcon('server-environment');
         item.tooltip = engine.defaultPort
-          ? `${engine.displayName} — puerto predeterminado ${engine.defaultPort}`
-          : `${engine.displayName} — base de datos en archivo`;
+          ? `${engine.displayName} — default port ${engine.defaultPort}`
+          : `${engine.displayName} — file database`;
         return item;
       }
       case 'connection': {
         const profile = this.connectionStore.get(node.profileId);
         if (!profile) {
-          return new vscode.TreeItem('Conexión eliminada');
+          return new vscode.TreeItem('Connection deleted');
         }
         const status = this.connectionManager.status(profile.id);
         const connected = this.connectionManager.isConnected(profile.id);
@@ -62,16 +62,16 @@ class ConnectionsTreeProvider {
             : 'simpleDb.connection.connected'
           : 'simpleDb.connection.disconnected';
         if (status.state === 'connecting') {
-          item.description = 'conectando…';
+          item.description = 'connecting…';
           item.iconPath = new vscode.ThemeIcon('sync~spin');
         } else if (status.state === 'error') {
           item.description = 'error';
           item.iconPath = new vscode.ThemeIcon('error');
         } else if (connected) {
-          item.description = transactionCount > 0 ? `TX: ${transactionCount}` : 'conectada';
+          item.description = transactionCount > 0 ? `TX: ${transactionCount}` : 'connected';
           item.iconPath = new vscode.ThemeIcon('database');
         } else {
-          item.description = 'desconectada';
+          item.description = 'disconnected';
           item.iconPath = new vscode.ThemeIcon('circle-outline');
         }
         let location;
@@ -89,7 +89,7 @@ class ConnectionsTreeProvider {
         tooltip.appendMarkdown(`${getDatabaseEngine(profile.engine)?.displayName || profile.engine}  \n`);
         tooltip.appendText(location);
         if (status.serverVersion) {
-          tooltip.appendMarkdown(`  \nServidor: ${status.serverVersion}`);
+          tooltip.appendMarkdown(`  \nServer: ${status.serverVersion}`);
         }
         if (status.error) {
           tooltip.appendMarkdown(`  \nError: ${status.error}`);
@@ -121,17 +121,17 @@ class ConnectionsTreeProvider {
       }
       case 'group': {
         const labels = {
-          tables: 'Tablas',
-          views: 'Vistas',
-          materializedViews: 'Vistas materializadas',
-          procedures: 'Procedimientos y funciones',
+          tables: 'Tables',
+          views: 'Views',
+          materializedViews: 'Materialized Views',
+          procedures: 'Procedures and Functions',
           packages: 'Packages',
-          indexes: 'Índices',
+          indexes: 'Indexes',
           triggers: 'Triggers',
-          sequences: 'Secuencias',
-          types: 'Tipos',
-          synonyms: 'Sinónimos',
-          events: 'Eventos',
+          sequences: 'Sequences',
+          types: 'Types',
+          synonyms: 'Synonyms',
+          events: 'Events',
         };
         const icons = {
           tables: 'table',
@@ -195,7 +195,7 @@ class ConnectionsTreeProvider {
       case 'message':
       default: {
         const item = new vscode.TreeItem(
-          node.label || 'Sin elementos',
+          node.label || 'No items',
           vscode.TreeItemCollapsibleState.None,
         );
         item.contextValue = 'simpleDb.message';
@@ -221,12 +221,12 @@ class ConnectionsTreeProvider {
           .sort((a, b) => a.name.localeCompare(b.name));
         return profiles.length
           ? profiles.map((profile) => ({ kind: 'connection', profileId: profile.id }))
-          : [this._message('Sin conexiones configuradas', node.engineId)];
+          : [this._message('No connections configured', node.engineId)];
       }
 
       if (node.kind === 'connection') {
         if (!this.connectionManager.isConnected(node.profileId)) {
-          return [this._message('Conecta para explorar la base de datos', node.profileId)];
+          return [this._message('Connect to explore the database', node.profileId)];
         }
         const databases = await this.connectionManager.listDatabases(node.profileId);
         return databases.length
@@ -236,7 +236,7 @@ class ConnectionsTreeProvider {
               database: String(database.name),
               file: database.file,
             }))
-          : [this._message('Sin bases de datos visibles', node.profileId)];
+          : [this._message('No visible databases', node.profileId)];
       }
 
       if (node.kind === 'database') {
@@ -255,7 +255,7 @@ class ConnectionsTreeProvider {
               database: node.database,
               schema: String(schema.name),
             }))
-          : [this._message('Sin esquemas visibles', `${node.profileId}.${node.database}`)];
+          : [this._message('No visible schemas', `${node.profileId}.${node.database}`)];
       }
 
       if (node.kind === 'schema') {
@@ -293,7 +293,7 @@ class ConnectionsTreeProvider {
               name: String(object.name),
               type: object.type || '',
             }))
-          : [this._message('Sin elementos', `${node.profileId}.${node.groupType}`)];
+          : [this._message('No items', `${node.profileId}.${node.groupType}`)];
       }
 
       if (
@@ -314,7 +314,7 @@ class ConnectionsTreeProvider {
               nullable: column.nullable === true || column.nullable === 1,
               position: column.position,
             }))
-          : [this._message('Sin columnas visibles', `${node.profileId}.${node.name}`)];
+          : [this._message('No visible columns', `${node.profileId}.${node.name}`)];
       }
 
       return [];

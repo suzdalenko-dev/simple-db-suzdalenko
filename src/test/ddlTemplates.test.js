@@ -11,7 +11,7 @@ const {
 const quote = (value) => `"${value}"`;
 
 describe('DDL templates', () => {
-  it('ofrece CREATE/ALTER/DROP para todos los tipos anunciados', () => {
+  it('provides CREATE/ALTER/DROP for every advertised object type', () => {
     for (const [engine, types] of Object.entries(OBJECT_TYPES_BY_ENGINE)) {
       expect(objectTypesForEngine(engine)).toEqual(types);
       for (const type of types) {
@@ -27,7 +27,7 @@ describe('DDL templates', () => {
     }
   });
 
-  it('crea un DROP INDEX correcto para MySQL y SQL Server cuando conoce la tabla', () => {
+  it('creates the correct DROP INDEX for MySQL and SQL Server when the table is known', () => {
     expect(
       dropTemplate('mysql', 'index', '`db`.`idx`', {
         identifierName: '`idx`',
@@ -42,7 +42,7 @@ describe('DDL templates', () => {
     ).toBe('DROP INDEX [idx] ON [dbo].[items];');
   });
 
-  it('respeta las reglas DDL especiales de índices, triggers y constraints', () => {
+  it('respects special DDL rules for indexes, triggers, and constraints', () => {
     expect(
       createTemplate('postgresql', 'index', '"public"."idx_items"', quote, {
         identifierName: '"idx_items"',
@@ -81,7 +81,7 @@ describe('DDL templates', () => {
     ).toBe('ALTER TABLE "public"."items" DROP CONSTRAINT IF EXISTS "items_pkey";');
   });
 
-  it('genera ALTER específico cuando el motor necesita el nombre de tabla', () => {
+  it('generates engine-specific ALTER when a table name is required', () => {
     expect(
       alterTemplate('sqlserver', 'index', '[dbo].[idx]', {
         identifierName: '[idx]',
@@ -96,7 +96,7 @@ describe('DDL templates', () => {
     ).toContain('ALTER TRIGGER "trg" ON "public"."items"');
   });
 
-  it('no introduce TOP/LIMIT/FETCH en las plantillas SELECT', () => {
+  it('does not introduce TOP/LIMIT/FETCH in SELECT templates', () => {
     for (const engine of Object.keys(OBJECT_TYPES_BY_ENGINE)) {
       if (!objectTypesForEngine(engine).includes('view')) continue;
       const sql = createTemplate(engine, 'view', 'demo', quote);

@@ -27,7 +27,7 @@ class SqliteAdapter extends BaseAdapter {
         this.connected = false;
       }
       if (code !== 0) {
-        this._rejectWorkerPending(worker, new Error(`SQLite worker finalizó con código ${code}.`));
+        this._rejectWorkerPending(worker, new Error(`SQLite worker exited with code ${code}.`));
       }
     });
     return worker;
@@ -99,7 +99,7 @@ class SqliteAdapter extends BaseAdapter {
 
   _request(type, payload = {}, options = {}) {
     if (!this.worker) {
-      return Promise.reject(new Error('SQLite no está conectado.'));
+      return Promise.reject(new Error('SQLite is not connected.'));
     }
     const requestId = options.requestId || randomUUID();
     const worker = this.worker;
@@ -162,11 +162,11 @@ class SqliteAdapter extends BaseAdapter {
   async begin(sessionId) {
     if (this.transactions.size > 0 && !this.transactions.has(sessionId)) {
       throw new Error(
-        'SQLite admite una única transacción activa por archivo en Simple DB.',
+        'Simple DB allows only one active SQLite transaction per file.',
       );
     }
     if (this.transactions.has(sessionId)) {
-      throw new Error('Esta sesión ya tiene una transacción SQLite activa.');
+      throw new Error('This session already has an active SQLite transaction.');
     }
     await this._request('begin');
     this.transactions.set(sessionId, true);
@@ -174,7 +174,7 @@ class SqliteAdapter extends BaseAdapter {
 
   async commit(sessionId) {
     if (!this.transactions.has(sessionId)) {
-      throw new Error('No hay una transacción activa en esta sesión.');
+      throw new Error('There is no active transaction in this session.');
     }
     await this._request('commit');
     this.transactions.delete(sessionId);
@@ -191,7 +191,7 @@ class SqliteAdapter extends BaseAdapter {
   async execute(sessionId, sql, options) {
     if (this.transactions.size > 0 && !this.transactions.has(sessionId)) {
       throw new Error(
-        'SQLite tiene una transacción activa en otro editor. Finaliza esa transacción antes de ejecutar aquí.',
+        'SQLite has an active transaction in another editor. Finish that transaction before executing here.',
       );
     }
     const requestId = randomUUID();

@@ -1,57 +1,57 @@
-SIMPLE DB 0.1.1 — PLAN DE ENTREGA
+SIMPLE DB 0.1.1 — DELIVERY PLAN
 
-1. Arquitectura JavaScript
-   [x] Eliminar TypeScript, tsconfig y compilación.
-   [x] Activación directa desde src/extension.js.
-   [x] Estructura nativa adapters/core/managers/services/sql/storage/ui/views/test.
+1. JavaScript architecture
+   [x] Remove TypeScript, tsconfig, and compilation.
+   [x] Activate directly from src/extension.js.
+   [x] Native adapters/core/managers/services/sql/storage/ui/views/test structure.
 
-2. Cinco motores
+2. Five database engines
    [x] SQLite.
    [x] PostgreSQL.
    [x] MySQL.
    [x] SQL Server.
    [x] Oracle.
 
-3. Conexiones
-   [x] Crear/editar/probar/eliminar perfiles.
-   [x] SecretStorage para contraseñas.
-   [x] Pools/conexiones simultáneas, estados y desconexión segura.
-   [x] Contexto de base de datos/esquema por editor.
+3. Connections
+   [x] Create/edit/test/delete profiles.
+   [x] SecretStorage for passwords.
+   [x] Simultaneous pools/connections, connection states, and safe disconnect.
+   [x] Per-editor database/schema context.
 
-4. Explorador
-   [x] Bases/esquemas/tablas/vistas/columnas/rutinas.
-   [x] Vistas materializadas, índices, triggers, secuencias y tipos.
-   [x] Packages Oracle, sinónimos y eventos donde corresponda.
-   [x] Definición de objetos y nombres cualificados.
+4. Explorer
+   [x] Databases/schemas/tables/views/columns/routines.
+   [x] Materialized views, indexes, triggers, sequences, and types.
+   [x] Oracle packages, synonyms, and events where supported.
+   [x] Object definitions and qualified names.
 
-5. SQL y DDL
-   [x] Documento/selección/sentencia actual.
-   [x] PostgreSQL $$, MySQL DELIMITER/#, SQL Server GO, Oracle PL/SQL/q-quotes, triggers SQLite.
-   [x] DML/DDL libre.
-   [x] Plantillas CREATE/ALTER/DROP y lectura DDL.
-   [x] Confirmación de DROP/TRUNCATE y aviso UPDATE/DELETE sin WHERE.
+5. SQL and DDL
+   [x] Document/selection/current-statement execution.
+   [x] PostgreSQL $$, MySQL DELIMITER/#, SQL Server GO, Oracle PL/SQL/q-quotes, SQLite triggers.
+   [x] Arbitrary DML/DDL.
+   [x] CREATE/ALTER/DROP templates and DDL inspection.
+   [x] DROP/TRUNCATE confirmation and UPDATE/DELETE-without-WHERE warning.
 
-6. Transacciones/cancelación
-   [x] BEGIN/COMMIT/ROLLBACK por editor.
-   [x] Conexión reservada por transacción.
-   [x] Cancelación PostgreSQL/MySQL/SQL Server/Oracle/SQLite.
-   [x] Timeout y estado de rollback requerido.
+6. Transactions/cancellation
+   [x] Per-editor BEGIN/COMMIT/ROLLBACK.
+   [x] Physical connection reserved for each transaction.
+   [x] PostgreSQL/MySQL/SQL Server/Oracle/SQLite cancellation.
+   [x] Timeout and rollback-required state.
 
-7. Resultados
-   [x] Streaming/cursor/result set por driver.
-   [x] maxRows=0 sin límite por defecto.
-   [x] Paginación temporal sin TOP/LIMIT/FETCH añadido.
-   [x] Múltiples result sets, NULL, tipos, tiempos y filas.
-   [x] Copiar celda/fila/selección.
-   [x] Exportación CSV/JSON/XLSX.
-   [x] Historial configurable.
+7. Results
+   [x] Driver streaming/cursor/result-set support.
+   [x] maxRows=0 with no limit by default.
+   [x] Temporary paging without added TOP/LIMIT/FETCH.
+   [x] Multiple result sets, NULL, types, timings, and row counts.
+   [x] Copy cell/row/selection.
+   [x] CSV/JSON/XLSX export.
+   [x] Configurable history.
 
-8. Calidad y entrega
-   [x] ESLint JavaScript.
-   [x] Tests JavaScript, incluida integración SQLite.
-   [x] Validación final npm run check (50 tests).
-   [x] Auditoría npm sin vulnerabilidades.
-   [x] Empaquetado VSIX validado como ZIP.
-   [x] Comprobar que no queda ningún archivo/configuración TypeScript en fuente ni VSIX.
-   [x] Commit final de version-0.1.1.
-   [x] Publicar rama version-0.1.1 en GitHub.
+8. Quality and delivery
+   [x] JavaScript ESLint.
+   [x] JavaScript tests, including SQLite integration.
+   [x] Final npm run check validation (50 tests).
+   [x] npm audit with no vulnerabilities.
+   [x] VSIX packaging validated as a ZIP archive.
+   [x] Verify that no TypeScript source/configuration remains in the source tree or VSIX.
+   [x] Final version-0.1.1 commit.
+   [x] Publish version-0.1.1 branch to GitHub.

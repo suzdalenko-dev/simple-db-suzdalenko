@@ -44,10 +44,10 @@ function profileForNode(connectionStore, node) {
   return node?.profileId ? connectionStore.get(node.profileId) : null;
 }
 
-async function pickProfile(connectionStore, title = 'Simple DB — Seleccionar conexión') {
+async function pickProfile(connectionStore, title = 'Simple DB — Select Connection') {
   const profiles = connectionStore.list();
   if (!profiles.length) {
-    throw new Error('No hay conexiones configuradas. Crea una conexión primero.');
+    throw new Error('No connections are configured. Create a connection first.');
   }
   const pick = await vscode.window.showQuickPick(
     profiles.map((profile) => ({
@@ -180,12 +180,12 @@ async function activate(context) {
         form.effectivePassword,
       );
       vscode.window.showInformationMessage(
-        `Simple DB: conexión correcta (${result.elapsedMs} ms) · ${result.serverVersion}`,
+        `Simple DB: connection successful (${result.elapsedMs} ms) · ${result.serverVersion}`,
       );
     }
     const saved = await connectionStore.save(form.profile, form.password);
     connectionsProvider.refresh();
-    vscode.window.showInformationMessage(`Simple DB: conexión "${saved.name}" guardada.`);
+    vscode.window.showInformationMessage(`Simple DB: connection "${saved.name}" saved.`);
   });
 
   registerCommand(context, 'simpleDb.refreshConnections', () => {
@@ -194,27 +194,27 @@ async function activate(context) {
 
   registerCommand(context, 'simpleDb.connect', async (node) => {
     const profile = profileForNode(connectionStore, node);
-    if (!profile) throw new Error('Conexión no encontrada.');
+    if (!profile) throw new Error('Connection not found.');
     const adapter = await connectionManager.connect(profile.id);
     vscode.window.showInformationMessage(
-      `Simple DB: conectado a ${profile.name} · ${adapter.serverVersion}`,
+      `Simple DB: connected to ${profile.name} · ${adapter.serverVersion}`,
     );
   });
 
   registerCommand(context, 'simpleDb.disconnect', async (node) => {
     const profile = profileForNode(connectionStore, node);
-    if (!profile) throw new Error('Conexión no encontrada.');
+    if (!profile) throw new Error('Connection not found.');
     const transactionCount = connectionManager.transactionCount(profile.id);
     const executionCount = connectionManager.executionCount(profile.id);
     if (transactionCount > 0 || executionCount > 0) {
       const details = [
-        executionCount > 0 ? `${executionCount} consulta(s) activa(s)` : '',
-        transactionCount > 0 ? `${transactionCount} transacción(es) activa(s)` : '',
-      ].filter(Boolean).join(' y ');
+        executionCount > 0 ? `${executionCount} active query/queries` : '',
+        transactionCount > 0 ? `${transactionCount} active transaction(s)` : '',
+      ].filter(Boolean).join(' and ');
       const answer = await vscode.window.showWarningMessage(
-        `Hay ${details}. Desconectar cancelará las consultas y hará ROLLBACK de las transacciones.`,
+        `There are ${details}. Disconnecting will cancel queries and ROLLBACK transactions.`,
         { modal: true },
-        'Cancelar, hacer ROLLBACK y desconectar',
+        'Cancel queries, ROLLBACK, and disconnect',
       );
       if (!answer) return;
     }
@@ -223,16 +223,16 @@ async function activate(context) {
 
   registerCommand(context, 'simpleDb.testConnection', async (node) => {
     const profile = profileForNode(connectionStore, node);
-    if (!profile) throw new Error('Conexión no encontrada.');
+    if (!profile) throw new Error('Connection not found.');
     const result = await connectionManager.testConnection(profile.id);
     vscode.window.showInformationMessage(
-      `Simple DB: ${profile.name} responde en ${result.elapsedMs} ms · ${result.serverVersion}`,
+      `Simple DB: ${profile.name} responded in ${result.elapsedMs} ms · ${result.serverVersion}`,
     );
   });
 
   registerCommand(context, 'simpleDb.editConnection', async (node) => {
     const profile = profileForNode(connectionStore, node);
-    if (!profile) throw new Error('Conexión no encontrada.');
+    if (!profile) throw new Error('Connection not found.');
     const existingPassword = await connectionStore.getPassword(profile.id);
     const form = await promptConnection({
       existingProfile: profile,
@@ -246,7 +246,7 @@ async function activate(context) {
         form.effectivePassword,
       );
       vscode.window.showInformationMessage(
-        `Simple DB: parámetros verificados en ${result.elapsedMs} ms · ${result.serverVersion}`,
+        `Simple DB: settings verified in ${result.elapsedMs} ms · ${result.serverVersion}`,
       );
     }
 
@@ -254,14 +254,14 @@ async function activate(context) {
       const transactions = connectionManager.transactionCount(profile.id);
       const executions = connectionManager.executionCount(profile.id);
       const text = transactions > 0 || executions > 0
-        ? `Guardar requiere desconectar: se cancelarán ${executions} consulta(s) y se hará ROLLBACK de ${transactions} transacción(es).`
-        : 'Guardar requiere desconectar la conexión activa.';
+        ? `Saving requires disconnecting: ${executions} query/queries will be cancelled and ${transactions} transaction(s) will be rolled back.`
+        : 'Saving requires disconnecting the active connection.';
       const answer = await vscode.window.showWarningMessage(
         text,
         { modal: true },
         transactions > 0 || executions > 0
-          ? 'Guardar, cancelar y hacer ROLLBACK'
-          : 'Guardar y desconectar',
+          ? 'Save, cancel queries, and ROLLBACK'
+          : 'Save and disconnect',
       );
       if (!answer) return;
       await connectionManager.disconnect(profile.id);
@@ -274,18 +274,18 @@ async function activate(context) {
 
   registerCommand(context, 'simpleDb.deleteConnection', async (node) => {
     const profile = profileForNode(connectionStore, node);
-    if (!profile) throw new Error('Conexión no encontrada.');
+    if (!profile) throw new Error('Connection not found.');
     const transactions = connectionManager.transactionCount(profile.id);
     const executions = connectionManager.executionCount(profile.id);
     const warning = transactions > 0 || executions > 0
-      ? ` Se cancelarán ${executions} consulta(s) y se hará ROLLBACK de ${transactions} transacción(es) activa(s).`
+      ? ` ${executions} query/queries will be cancelled and ${transactions} active transaction(s) will be rolled back.`
       : '';
     const answer = await vscode.window.showWarningMessage(
-      `¿Eliminar la conexión "${profile.name}"?${warning}`,
+      `Delete connection "${profile.name}"?${warning}`,
       { modal: true },
-      'Eliminar',
+      'Delete',
     );
-    if (answer !== 'Eliminar') return;
+    if (answer !== 'Delete') return;
     await connectionManager.disconnect(profile.id);
     await connectionStore.delete(profile.id);
     connectionsProvider.refresh();
@@ -312,7 +312,7 @@ async function activate(context) {
   registerCommand(context, 'simpleDb.cancelQuery', async () => {
     const session = editorSessionManager.getActive();
     if (!session?.runningExecutionId) {
-      vscode.window.showInformationMessage('Simple DB: no hay una consulta activa que cancelar.');
+      vscode.window.showInformationMessage('Simple DB: there is no active query to cancel.');
       return;
     }
     await connectionManager.cancel(session.profileId, session.runningExecutionId);
@@ -322,47 +322,47 @@ async function activate(context) {
     const session = await editorSessionManager.ensureActiveSession();
     if (!session) return;
     if (session.runningExecutionId) {
-      throw new Error('Espera o cancela la consulta activa antes de iniciar una transacción.');
+      throw new Error('Wait for or cancel the active query before starting a transaction.');
     }
     if (connectionManager.hasTransaction(session.profileId, session.id)) {
-      throw new Error('Ya existe una transacción activa en este editor.');
+      throw new Error('This editor already has an active transaction.');
     }
     await connectionManager.begin(session.profileId, session.id, {
       database: session.database,
       schema: session.schema,
     });
     editorSessionManager.markTransactionNeedsRollback(session, false);
-    vscode.window.showInformationMessage('Simple DB: transacción iniciada.');
+    vscode.window.showInformationMessage('Simple DB: transaction started.');
   });
 
   registerCommand(context, 'simpleDb.commit', async () => {
     const session = await editorSessionManager.ensureActiveSession();
     if (!session) return;
     if (session.runningExecutionId) {
-      throw new Error('Espera o cancela la consulta activa antes de hacer COMMIT.');
+      throw new Error('Wait for or cancel the active query before COMMIT.');
     }
     if (session.transactionNeedsRollback) {
-      throw new Error('La transacción tuvo un error. Ejecuta ROLLBACK antes de continuar.');
+      throw new Error('The transaction encountered an error. Run ROLLBACK before continuing.');
     }
     await connectionManager.commit(session.profileId, session.id);
     editorSessionManager.markTransactionNeedsRollback(session, false);
-    vscode.window.showInformationMessage('Simple DB: COMMIT completado.');
+    vscode.window.showInformationMessage('Simple DB: COMMIT completed.');
   });
 
   registerCommand(context, 'simpleDb.rollback', async () => {
     const session = await editorSessionManager.ensureActiveSession();
     if (!session) return;
     if (session.runningExecutionId) {
-      throw new Error('Cancela o espera a que termine la consulta antes de hacer ROLLBACK.');
+      throw new Error('Cancel or wait for the active query before ROLLBACK.');
     }
     await connectionManager.rollback(session.profileId, session.id);
     editorSessionManager.markTransactionNeedsRollback(session, false);
-    vscode.window.showInformationMessage('Simple DB: ROLLBACK completado.');
+    vscode.window.showInformationMessage('Simple DB: ROLLBACK completed.');
   });
 
   registerCommand(context, 'simpleDb.selectTable', async (node) => {
     if (node?.kind !== 'object' || !['table', 'view', 'materializedView'].includes(node.objectType)) {
-      throw new Error('Selecciona una tabla o vista del explorador.');
+      throw new Error('Select a table or view in the explorer.');
     }
     const profile = profileForNode(connectionStore, node);
     await connectionManager.ensureConnected(profile.id);
@@ -379,7 +379,7 @@ async function activate(context) {
   });
 
   registerCommand(context, 'simpleDb.showDefinition', async (node) => {
-    if (node?.kind !== 'object') throw new Error('Selecciona un objeto de base de datos.');
+    if (node?.kind !== 'object') throw new Error('Select a database object.');
     const profile = profileForNode(connectionStore, node);
     await connectionManager.ensureConnected(profile.id);
     const definition = await connectionManager.getObjectDefinition(
@@ -392,7 +392,7 @@ async function activate(context) {
     );
     if (!definition) {
       vscode.window.showWarningMessage(
-        `Simple DB: el servidor no devolvió la definición de ${node.name}.`,
+        `Simple DB: the server did not return a definition for ${node.name}.`,
       );
       return;
     }
@@ -413,7 +413,7 @@ async function activate(context) {
       const types = objectTypesForEngine(profile.engine);
       const pick = await vscode.window.showQuickPick(
         types.map((type) => ({ label: OBJECT_LABELS[type] || type, type })),
-        { title: `Simple DB — Crear objeto en ${profile.name}` },
+        { title: `Simple DB — Create Object in ${profile.name}` },
       );
       objectType = pick?.type;
     } else if (node?.groupType === 'procedures') {
@@ -422,20 +422,20 @@ async function activate(context) {
     if (!objectType && node?.groupType === 'procedures') {
       const routine = await vscode.window.showQuickPick(
         [
-          { label: 'Procedimiento', type: 'procedure' },
-          { label: 'Función', type: 'function' },
+          { label: 'Procedure', type: 'procedure' },
+          { label: 'Function', type: 'function' },
         ],
-        { title: `Simple DB — Crear rutina en ${profile.name}` },
+        { title: `Simple DB — Create Routine in ${profile.name}` },
       );
       objectType = routine?.type;
     }
     if (!objectType) return;
 
     const name = await vscode.window.showInputBox({
-      title: `Simple DB — Crear ${OBJECT_LABELS[objectType] || objectType}`,
-      prompt: 'Nombre del nuevo objeto',
+      title: `Simple DB — Create ${OBJECT_LABELS[objectType] || objectType}`,
+      prompt: 'New object name',
       ignoreFocusOut: true,
-      validateInput: (value) => (value.trim() ? null : 'El nombre es obligatorio.'),
+      validateInput: (value) => (value.trim() ? null : 'Name is required.'),
     });
     if (!name) return;
     const qualified = ddlQualifiedName(
@@ -458,7 +458,7 @@ async function activate(context) {
   });
 
   registerCommand(context, 'simpleDb.alterObject', async (node) => {
-    if (node?.kind !== 'object') throw new Error('Selecciona un objeto de base de datos.');
+    if (node?.kind !== 'object') throw new Error('Select a database object.');
     const profile = profileForNode(connectionStore, node);
     await connectionManager.ensureConnected(profile.id);
     const objectType = effectiveObjectType(node);
@@ -496,7 +496,7 @@ async function activate(context) {
   });
 
   registerCommand(context, 'simpleDb.dropObjectScript', async (node) => {
-    if (node?.kind !== 'object') throw new Error('Selecciona un objeto de base de datos.');
+    if (node?.kind !== 'object') throw new Error('Select a database object.');
     const profile = profileForNode(connectionStore, node);
     await connectionManager.ensureConnected(profile.id);
     const objectType = effectiveObjectType(node);
@@ -539,7 +539,7 @@ async function activate(context) {
   });
 
   registerCommand(context, 'simpleDb.copyQualifiedName', async (node) => {
-    if (node?.kind !== 'object') throw new Error('Selecciona un objeto de base de datos.');
+    if (node?.kind !== 'object') throw new Error('Select a database object.');
     const profile = profileForNode(connectionStore, node);
     await connectionManager.ensureConnected(profile.id);
     const qualified = connectionManager.quoteTable(
@@ -558,20 +558,20 @@ async function activate(context) {
   registerCommand(context, 'simpleDb.clearHistory', async () => {
     if (!historyStore.list().length) return;
     const answer = await vscode.window.showWarningMessage(
-      '¿Vaciar todo el historial local de consultas de Simple DB?',
+      'Clear all local Simple DB query history?',
       { modal: true },
-      'Vaciar historial',
+      'Clear History',
     );
-    if (answer === 'Vaciar historial') await historyStore.clear();
+    if (answer === 'Clear History') await historyStore.clear();
   });
 
   const historyEntry = (node) => node?.entry || historyStore.get(node?.id);
 
   registerCommand(context, 'simpleDb.openHistoryEntry', async (node) => {
     const entry = historyEntry(node);
-    if (!entry) throw new Error('La entrada de historial ya no existe.');
+    if (!entry) throw new Error('The history entry no longer exists.');
     const profile = connectionStore.get(entry.profileId);
-    if (!profile) throw new Error('La conexión asociada a esta consulta ya no existe.');
+    if (!profile) throw new Error('The connection associated with this query no longer exists.');
     await editorSessionManager.createQuery(profile, entry.sql, {
       database: entry.database,
       schema: entry.schema,
@@ -580,15 +580,15 @@ async function activate(context) {
 
   registerCommand(context, 'simpleDb.copyHistoryEntry', async (node) => {
     const entry = historyEntry(node);
-    if (!entry) throw new Error('La entrada de historial ya no existe.');
+    if (!entry) throw new Error('The history entry no longer exists.');
     await vscode.env.clipboard.writeText(entry.sql);
   });
 
   registerCommand(context, 'simpleDb.rerunHistoryEntry', async (node) => {
     const entry = historyEntry(node);
-    if (!entry) throw new Error('La entrada de historial ya no existe.');
+    if (!entry) throw new Error('The history entry no longer exists.');
     const profile = connectionStore.get(entry.profileId);
-    if (!profile) throw new Error('La conexión asociada a esta consulta ya no existe.');
+    if (!profile) throw new Error('The connection associated with this query no longer exists.');
     await editorSessionManager.createQuery(profile, entry.sql, {
       database: entry.database,
       schema: entry.schema,
@@ -617,12 +617,12 @@ async function activate(context) {
       }
       if (hadTransaction) {
         vscode.window.showWarningMessage(
-          'Simple DB: se hizo ROLLBACK de la transacción al cerrar el editor SQL.',
+          'Simple DB: the transaction was rolled back when the SQL editor closed.',
         );
       }
     } catch (error) {
       vscode.window.showErrorMessage(
-        `Simple DB: no se pudo cerrar la transacción del editor: ${error.message}`,
+        `Simple DB: the editor transaction could not be closed: ${error.message}`,
       );
     }
   });

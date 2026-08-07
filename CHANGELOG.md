@@ -1,40 +1,42 @@
 # Changelog
 
-Todos los cambios relevantes de Simple DB se documentan en este archivo.
+All notable changes to Simple DB are documented in this file.
 
 ## 0.1.1 - 2026-08-07
 
-### Añadido
+### Added
 
-- SQLite como quinto motor, ejecutado con `sql.js` en un Worker cancelable.
-- Adaptadores completos para SQLite, PostgreSQL, MySQL, SQL Server y Oracle.
-- Perfiles múltiples, prueba de conexión, conexión/desconexión y contraseñas en `SecretStorage`.
-- Exploración de bases, esquemas y objetos específicos: tablas, vistas, vistas materializadas, rutinas, packages Oracle, índices, triggers, secuencias, tipos, sinónimos y eventos MySQL según el motor.
-- Editor SQL por sesión y contexto de base/esquema.
-- Parser de dialecto para PostgreSQL `$$`, MySQL `DELIMITER`, SQL Server `GO`, Oracle PL/SQL `/` y triggers SQLite.
-- Ejecución de selección, sentencia actual o documento; DML, DDL y SQL arbitrario.
-- Lectura/plantillas de DDL con acciones para mostrar definición, preparar `CREATE`, `ALTER` y `DROP`.
-- Transacciones por editor, `COMMIT`, `ROLLBACK`, cancelación y timeouts.
-- Resultados paginados en disco, múltiples result sets, copia de celda/fila/selección y exportación CSV/JSON/XLSX.
-- Historial configurable, duración, filas recuperadas y filas afectadas.
-- Confirmaciones configurables para operaciones destructivas y DML sin `WHERE`.
-- Pruebas automatizadas íntegramente en JavaScript, incluida integración real del adaptador SQLite.
-- Protección SQLite frente a cambios externos y WAL activo, además de lectura exacta de enteros de 64 bits.
-- DDL específico por motor para índices/triggers y eliminación correcta de índices respaldados por constraints cuando el catálogo aporta esa información.
-- Protección de inicios de transacción escritos como SQL para mantener PostgreSQL/MySQL sobre una conexión física reservada, incluidas variantes de `START TRANSACTION`.
-- Protección frente a inyección de fórmulas al exportar CSV y preservación de `NUMBER` Oracle como texto exacto.
+- SQLite as the fifth database engine, running with `sql.js` in a cancellable Worker.
+- Full adapters for SQLite, PostgreSQL, MySQL, SQL Server, and Oracle.
+- Multiple profiles, connection testing, connect/disconnect actions, and passwords stored in `SecretStorage`.
+- Exploration of databases, schemas, and engine-specific objects: tables, views, materialized views, routines, Oracle packages, indexes, triggers, sequences, types, synonyms, and MySQL events where supported.
+- SQL editor sessions with database/schema context.
+- Dialect-aware parsing for PostgreSQL `$$`, MySQL `DELIMITER`, SQL Server `GO`, Oracle PL/SQL `/`, and SQLite triggers.
+- Selection, current-statement, and document execution for DML, DDL, and arbitrary SQL.
+- DDL inspection/templates with actions to show definitions and prepare `CREATE`, `ALTER`, and `DROP` scripts.
+- Per-editor transactions, `COMMIT`, `ROLLBACK`, cancellation, and timeouts.
+- Disk-backed paged results, multiple result sets, cell/row/selection copy actions, and CSV/JSON/XLSX export.
+- Configurable history with duration, retrieved rows, and affected rows.
+- Configurable confirmations for destructive operations and DML without `WHERE`.
+- Automated tests written entirely in JavaScript, including real SQLite adapter integration.
+- SQLite protection against external file changes and active WAL files, plus exact 64-bit integer reads.
+- Engine-specific DDL for indexes/triggers and correct removal of constraint-backed indexes when the catalog provides the required information.
+- Protection for transaction-start statements written as SQL so PostgreSQL/MySQL remain on a reserved physical connection, including `START TRANSACTION` variants.
+- CSV formula-injection protection and exact Oracle `NUMBER` preservation as text.
 
-### Cambiado
+### Changed
 
-- Proyecto migrado completamente de TypeScript a JavaScript: no quedan `.ts`, `tsconfig.json` ni compilación TypeScript.
-- `F5` carga directamente `src/extension.js`.
-- `simpleDb.maxRows` pasa a `0` por defecto, es decir, **sin límite de filas**. El usuario puede configurar uno si lo necesita.
-- La paginación de resultados es almacenamiento/visualización y no altera el SQL con `TOP`, `LIMIT` o `FETCH`.
-- CI verifica JavaScript mediante lint, tests y empaquetado VSIX.
-- Dependencias bloqueadas por lockfile y auditoría npm integrada en CI.
+- Standardized the README, project documentation, commands, settings, UI messages, generated-template guidance, comments, and test descriptions in English.
+- Improved Marketplace discovery with a database-focused display name, expanded search keywords, an English description, and a dedicated Simple DB Marketplace icon.
+- Migrated the project completely from TypeScript to JavaScript: no `.ts`, `tsconfig.json`, or TypeScript compilation remains.
+- `F5` loads `src/extension.js` directly.
+- `simpleDb.maxRows` now defaults to `0`, meaning **no row limit**. Users can configure a limit if needed.
+- Result pagination is a storage/display mechanism and does not alter SQL with `TOP`, `LIMIT`, or `FETCH`.
+- CI validates JavaScript with linting, tests, and VSIX packaging.
+- Dependencies are locked through the lockfile and production dependency auditing is integrated into CI.
 
 ## 0.0.1 - 2026-08-05
 
-### Añadido
+### Added
 
-- Esqueleto inicial de la extensión.
+- Initial extension skeleton.

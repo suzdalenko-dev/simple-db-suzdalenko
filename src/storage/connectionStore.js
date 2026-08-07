@@ -103,13 +103,13 @@ class ConnectionStore {
     });
 
     if (!profile.name) {
-      throw new Error('El nombre de la conexión es obligatorio.');
+      throw new Error('Connection name is required.');
     }
     if (!isDatabaseEngineId(profile.engine)) {
-      throw new Error(`Motor de base de datos no válido: ${profile.engine}`);
+      throw new Error(`Invalid database engine: ${profile.engine}`);
     }
     if (profile.engine === 'sqlite' && !profile.filePath) {
-      throw new Error('La ruta del archivo SQLite es obligatoria.');
+      throw new Error('SQLite file path is required.');
     }
 
     const profiles = this.list();
@@ -121,7 +121,7 @@ class ConnectionStore {
         }) === 0,
     );
     if (duplicate) {
-      throw new Error(`Ya existe una conexión llamada "${profile.name}".`);
+      throw new Error(`A connection named "${profile.name}" already exists.`);
     }
 
     const index = profiles.findIndex((candidate) => candidate.id === id);

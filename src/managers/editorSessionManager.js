@@ -14,7 +14,7 @@ class EditorSessionManager {
       100,
     );
     this.statusBar.command = 'simpleDb.changeEditorConnection';
-    this.statusBar.tooltip = 'Simple DB: cambiar la conexión del editor SQL';
+    this.statusBar.tooltip = 'Simple DB: change the SQL editor connection';
 
     this.activeEditorDisposable = vscode.window.onDidChangeActiveTextEditor(() => {
       this.refreshStatusBar();
@@ -79,7 +79,7 @@ class EditorSessionManager {
   async ensureActiveSession() {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
-      throw new Error('No hay un editor SQL activo.');
+      throw new Error('There is no active SQL editor.');
     }
     const existing = this.get(editor.document);
     if (existing) {
@@ -88,7 +88,7 @@ class EditorSessionManager {
 
     const profiles = this.connectionStore.list();
     if (!profiles.length) {
-      throw new Error('Primero debes crear una conexión en Simple DB.');
+      throw new Error('Create a connection in Simple DB first.');
     }
     const pick = await vscode.window.showQuickPick(
       profiles.map((profile) => ({
@@ -97,8 +97,8 @@ class EditorSessionManager {
         profile,
       })),
       {
-        title: 'Simple DB — Vincular editor a una conexión',
-        placeHolder: 'Selecciona la conexión para este editor SQL',
+        title: 'Simple DB — Link Editor to Connection',
+        placeHolder: 'Select the connection for this SQL editor',
       },
     );
     if (!pick) {
@@ -114,10 +114,10 @@ class EditorSessionManager {
     }
     const session = this.get(editor.document);
     if (session?.runningExecutionId) {
-      throw new Error('Cancela o espera a que termine la consulta antes de cambiar de conexión.');
+      throw new Error('Cancel or wait for the active query before changing connections.');
     }
     if (session && this.connectionManager.hasTransaction(session.profileId, session.id)) {
-      throw new Error('Haz COMMIT o ROLLBACK antes de cambiar la conexión del editor.');
+      throw new Error('Run COMMIT or ROLLBACK before changing the editor connection.');
     }
 
     const profiles = this.connectionStore.list();
@@ -127,7 +127,7 @@ class EditorSessionManager {
         description: getDatabaseEngine(profile.engine)?.displayName || profile.engine,
         profile,
       })),
-      { title: 'Simple DB — Cambiar conexión del editor' },
+      { title: 'Simple DB — Change Editor Connection' },
     );
     if (!pick) {
       return;
@@ -165,7 +165,7 @@ class EditorSessionManager {
     }
     const profile = this.connectionStore.get(session.profileId);
     if (!profile) {
-      this.statusBar.text = '$(warning) Simple DB | conexión eliminada';
+      this.statusBar.text = '$(warning) Simple DB | connection deleted';
       this.statusBar.show();
       return;
     }
@@ -174,11 +174,11 @@ class EditorSessionManager {
     const connected = this.connectionManager.isConnected(profile.id);
     const transaction = this.connectionManager.hasTransaction(profile.id, session.id);
     const mode = session.transactionNeedsRollback
-      ? 'TX requiere ROLLBACK'
+      ? 'TX requires ROLLBACK'
       : transaction
-        ? 'TX activa'
+        ? 'TX active'
         : 'Auto-commit';
-    const running = session.runningExecutionId ? ' | $(sync~spin) Ejecutando' : '';
+    const running = session.runningExecutionId ? ' | $(sync~spin) Running' : '';
     const connectionIcon = connected ? '$(database)' : '$(circle-slash)';
     this.statusBar.text = `${connectionIcon} ${engine} | ${profile.name} | ${session.database || '-'} | ${mode}${running}`;
     this.statusBar.show();

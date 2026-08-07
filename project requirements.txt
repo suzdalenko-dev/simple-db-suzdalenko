@@ -1,62 +1,62 @@
-SIMPLE DB 0.1.1 — REQUISITOS DE PRODUCTO
+SIMPLE DB 0.1.1 — PRODUCT REQUIREMENTS
 
-Lenguaje y ejecución
-- Todo el código de la extensión y todos los tests se escriben en JavaScript.
-- No se usa TypeScript, tsconfig.json ni un paso de compilación TypeScript.
-- F5 carga directamente src/extension.js.
+Language and execution
+- All extension code and tests are written in JavaScript.
+- TypeScript, tsconfig.json, and a TypeScript compilation step are not used.
+- F5 loads src/extension.js directly.
 
-Motores obligatorios
+Required database engines
 - SQLite.
 - PostgreSQL.
 - MySQL.
 - SQL Server.
 - Oracle.
 
-Conexiones
-- Crear, editar, probar y eliminar conexiones.
-- Varias conexiones por motor y varios motores conectados a la vez.
-- Contraseñas en VS Code SecretStorage.
-- SSL/TLS/cifrado y timeouts según el motor.
+Connections
+- Create, edit, test, and delete connections.
+- Support multiple connections per engine and multiple connected engines at the same time.
+- Store passwords in VS Code SecretStorage.
+- Support SSL/TLS/encryption and timeouts as appropriate for each engine.
 
-Exploración
-- Bases de datos y esquemas cuando el motor los exponga.
-- Tablas, vistas y columnas.
-- Vistas materializadas donde existan.
-- Procedimientos y funciones.
-- Packages Oracle.
-- Índices, triggers, secuencias y tipos cuando existan.
-- Sinónimos en Oracle/SQL Server y eventos MySQL.
-- Mostrar definición/DDL y preparar CREATE, ALTER y DROP.
+Exploration
+- Databases and schemas where exposed by the engine.
+- Tables, views, and columns.
+- Materialized views where available.
+- Procedures and functions.
+- Oracle packages.
+- Indexes, triggers, sequences, and types where available.
+- Synonyms in Oracle/SQL Server and MySQL events.
+- Show definitions/DDL and prepare CREATE, ALTER, and DROP scripts.
 
-Editor y ejecución
-- Documento SQL normal de VS Code vinculado a perfil/base/esquema.
-- Ejecutar documento completo, selección o sentencia del cursor.
-- SELECT, INSERT, UPDATE, DELETE, MERGE y cualquier DML soportado por el motor.
-- CREATE, ALTER, DROP, TRUNCATE y demás DDL soportado por el motor.
-- PostgreSQL dollar quotes, MySQL DELIMITER, SQL Server GO, Oracle PL/SQL y terminador /, triggers SQLite.
-- Detener documento en el primer error y seleccionar el bloque fallido.
+Editor and execution
+- Regular VS Code SQL documents linked to a profile/database/schema.
+- Execute the entire document, a selection, or the statement at the cursor.
+- SELECT, INSERT, UPDATE, DELETE, MERGE, and any DML supported by the engine.
+- CREATE, ALTER, DROP, TRUNCATE, and any other DDL supported by the engine.
+- PostgreSQL dollar quotes, MySQL DELIMITER, SQL Server GO, Oracle PL/SQL and `/` terminator, SQLite triggers.
+- Stop document execution at the first error and select the failed block.
 
-Transacciones y cancelación
-- Auto-commit fuera de una transacción explícita.
-- BEGIN, COMMIT y ROLLBACK por editor.
-- Conexión física reservada durante una transacción.
-- ROLLBACK al cerrar editor/desconectar con transacción abierta.
-- Cancelación por mecanismo nativo del driver.
-- Timeout configurable por perfil.
+Transactions and cancellation
+- Auto-commit outside an explicit transaction.
+- Per-editor BEGIN, COMMIT, and ROLLBACK.
+- Reserve the physical connection for the duration of a transaction.
+- ROLLBACK when closing an editor/disconnecting with an open transaction.
+- Cancellation through the driver's native mechanism.
+- Configurable timeout per profile.
 
-Resultados
-- Tabla, tipos, NULL, varias tablas de resultados, filas recuperadas/afectadas y duración.
-- Copiar celda, fila y selección.
-- Exportar CSV, JSON y XLSX sin reejecutar la consulta.
-- Historial local configurable.
+Results
+- Table output, types, NULL, multiple result sets, retrieved/affected rows, and duration.
+- Copy a cell, row, or selection.
+- Export CSV, JSON, and XLSX without executing the query again.
+- Configurable local history.
 
-Política de filas
-- simpleDb.maxRows = 0 por defecto: SIN LÍMITE.
-- El usuario puede elegir un límite mayor que cero si lo necesita.
-- simpleDb.resultPageSize controla páginas de almacenamiento/visualización, no el número total de filas.
-- Simple DB NO inyecta TOP, LIMIT ni FETCH en el SQL del usuario.
+Row policy
+- simpleDb.maxRows = 0 by default: NO LIMIT.
+- Users can choose a limit greater than zero when needed.
+- simpleDb.resultPageSize controls storage/display pages, not the total number of rows.
+- Simple DB DOES NOT inject TOP, LIMIT, or FETCH into user SQL.
 
-Protecciones
-- Confirmación configurable para DROP/TRUNCATE.
-- Aviso configurable para UPDATE/DELETE sin WHERE.
-- Los scripts destructivos generados se abren en el editor; no se ejecutan automáticamente.
+Protections
+- Configurable confirmation for DROP/TRUNCATE.
+- Configurable warning for UPDATE/DELETE without WHERE.
+- Generated destructive scripts open in the editor and are never executed automatically.

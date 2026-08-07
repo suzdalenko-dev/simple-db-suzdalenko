@@ -1,4 +1,4 @@
-name: Verificación
+name: Verification
 
 on:
   push:
@@ -12,32 +12,32 @@ permissions:
 
 jobs:
   verify:
-    name: Analizar, probar y empaquetar JavaScript
+    name: Lint, test, and package JavaScript
     runs-on: ubuntu-latest
 
     steps:
-      - name: Descargar el código
+      - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - name: Instalar dependencias
+      - name: Install dependencies
         run: npm ci
 
-      - name: Auditar dependencias de producción
+      - name: Audit production dependencies
         run: npm audit --omit=dev
 
-      - name: Verificar el proyecto
+      - name: Verify project
         run: npm run check
 
-      - name: Crear VSIX
+      - name: Build VSIX
         run: npm run package
 
-      - name: Guardar VSIX
+      - name: Upload VSIX
         uses: actions/upload-artifact@v4
         with:
           name: simple-db-vsix

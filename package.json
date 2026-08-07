@@ -1,10 +1,11 @@
 {
   "name": "simple-db-suzdalenko",
-  "displayName": "Simple DB",
-  "description": "Cliente SQL para SQLite, PostgreSQL, MySQL, SQL Server y Oracle dentro de Visual Studio Code.",
+  "displayName": "Simple DB - SQL Client for SQLite, MySQL, PostgreSQL, SQL Server & Oracle",
+  "description": "SQL client and database editor for SQLite, MySQL, PostgreSQL, SQL Server (MSSQL) and Oracle. Browse database objects, run queries, manage DDL and export results.",
   "version": "0.1.1",
   "publisher": "suzdalenko-dev",
   "license": "MIT",
+  "icon": "resources/simple-db-marketplace.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/suzdalenko-dev/simple-db-suzdalenko.git"
@@ -24,13 +25,31 @@
     "Data Science"
   ],
   "keywords": [
-    "database",
     "sql",
+    "database",
+    "sql client",
+    "database client",
+    "sql editor",
+    "database editor",
+    "query editor",
+    "database explorer",
     "sqlite",
-    "postgresql",
+    "sqlite client",
     "mysql",
-    "sql-server",
-    "oracle"
+    "mysql client",
+    "postgresql",
+    "postgres",
+    "postgresql client",
+    "oracle",
+    "oracle database",
+    "oracle client",
+    "plsql",
+    "pl/sql",
+    "sql server",
+    "mssql",
+    "t-sql",
+    "ddl",
+    "schema explorer"
   ],
   "activationEvents": [
     "onView:simpleDb.connections",
@@ -42,77 +61,77 @@
     "commands": [
       {
         "command": "simpleDb.addConnection",
-        "title": "Añadir conexión",
+        "title": "Add Connection",
         "category": "Simple DB",
         "icon": "$(add)"
       },
       {
         "command": "simpleDb.refreshConnections",
-        "title": "Actualizar conexiones",
+        "title": "Refresh Connections",
         "category": "Simple DB",
         "icon": "$(refresh)"
       },
       {
         "command": "simpleDb.connect",
-        "title": "Conectar",
+        "title": "Connect",
         "category": "Simple DB",
         "icon": "$(plug)"
       },
       {
         "command": "simpleDb.disconnect",
-        "title": "Desconectar",
+        "title": "Disconnect",
         "category": "Simple DB",
         "icon": "$(debug-disconnect)"
       },
       {
         "command": "simpleDb.testConnection",
-        "title": "Probar conexión",
+        "title": "Test Connection",
         "category": "Simple DB",
         "icon": "$(beaker)"
       },
       {
         "command": "simpleDb.editConnection",
-        "title": "Editar conexión",
+        "title": "Edit Connection",
         "category": "Simple DB",
         "icon": "$(edit)"
       },
       {
         "command": "simpleDb.deleteConnection",
-        "title": "Eliminar conexión",
+        "title": "Delete Connection",
         "category": "Simple DB",
         "icon": "$(trash)"
       },
       {
         "command": "simpleDb.newQuery",
-        "title": "Nueva consulta",
+        "title": "New Query",
         "category": "Simple DB",
         "icon": "$(new-file)"
       },
       {
         "command": "simpleDb.changeEditorConnection",
-        "title": "Cambiar conexión del editor",
+        "title": "Change Editor Connection",
         "category": "Simple DB"
       },
       {
         "command": "simpleDb.executeCurrent",
-        "title": "Ejecutar selección o sentencia actual",
+        "title": "Execute Selection or Current Statement",
         "category": "Simple DB",
         "icon": "$(play)"
       },
       {
         "command": "simpleDb.executeSelection",
-        "title": "Ejecutar selección",
+        "title": "Execute Selection",
         "category": "Simple DB"
       },
       {
         "command": "simpleDb.executeDocument",
-        "title": "Ejecutar documento completo",
+        "title": "Execute Entire Document",
         "category": "Simple DB",
         "icon": "$(run-all)"
       },
       {
         "command": "simpleDb.cancelQuery",
-        "title": "Cancelar consulta",
+        "title": "Cancel Query",
         "category": "Simple DB",
         "icon": "$(debug-stop)"
       },
@@ -133,69 +152,69 @@
       },
       {
         "command": "simpleDb.showHistory",
-        "title": "Mostrar historial",
+        "title": "Show History",
         "category": "Simple DB",
         "icon": "$(history)"
       },
       {
         "command": "simpleDb.clearHistory",
-        "title": "Vaciar historial",
+        "title": "Clear History",
         "category": "Simple DB",
         "icon": "$(clear-all)"
       },
       {
         "command": "simpleDb.openHistoryEntry",
-        "title": "Abrir consulta del historial",
+        "title": "Open History Query",
         "category": "Simple DB"
       },
       {
         "command": "simpleDb.copyHistoryEntry",
-        "title": "Copiar SQL",
+        "title": "Copy SQL",
         "category": "Simple DB"
       },
       {
         "command": "simpleDb.rerunHistoryEntry",
-        "title": "Volver a ejecutar",
+        "title": "Run Again",
         "category": "Simple DB"
       },
       {
         "command": "simpleDb.deleteHistoryEntry",
-        "title": "Eliminar del historial",
+        "title": "Delete from History",
         "category": "Simple DB"
       },
       {
         "command": "simpleDb.selectTable",
-        "title": "Abrir SELECT *",
+        "title": "Open SELECT *",
         "category": "Simple DB",
         "icon": "$(preview)"
       },
       {
         "command": "simpleDb.showDefinition",
-        "title": "Mostrar definición / DDL",
+        "title": "Show Definition / DDL",
         "category": "Simple DB",
         "icon": "$(code)"
       },
       {
         "command": "simpleDb.createObject",
-        "title": "Crear objeto SQL",
+        "title": "Create SQL Object",
         "category": "Simple DB",
         "icon": "$(add)"
       },
       {
         "command": "simpleDb.alterObject",
-        "title": "Preparar ALTER",
+        "title": "Prepare ALTER",
         "category": "Simple DB",
         "icon": "$(edit)"
       },
       {
         "command": "simpleDb.dropObjectScript",
-        "title": "Preparar DROP",
+        "title": "Prepare DROP",
         "category": "Simple DB",
         "icon": "$(trash)"
       },
       {
         "command": "simpleDb.copyQualifiedName",
-        "title": "Copiar nombre cualificado",
+        "title": "Copy Qualified Name",
         "category": "Simple DB",
         "icon": "$(copy)"
       }
@@ -213,12 +232,12 @@
       "simpleDb": [
         {
           "id": "simpleDb.connections",
-          "name": "Conexiones",
+          "name": "Connections",
           "type": "tree"
         },
         {
           "id": "simpleDb.history",
-          "name": "Historial",
+          "name": "History",
           "type": "tree"
         }
       ]
@@ -390,53 +409,53 @@
           "default": 0,
           "minimum": 0,
           "maximum": 100000000,
-          "description": "Máximo opcional de filas recuperadas por conjunto de resultados. 0 = sin límite. Simple DB no modifica el SQL con TOP/LIMIT/FETCH."
+          "description": "Optional maximum number of rows retrieved per result set. 0 = unlimited. Simple DB does not modify SQL with TOP/LIMIT/FETCH."
         },
         "simpleDb.resultPageSize": {
           "type": "integer",
           "default": 500,
           "minimum": 50,
           "maximum": 5000,
-          "description": "Filas almacenadas y mostradas por página."
+          "description": "Rows stored and displayed per page."
         },
         "simpleDb.maxCellCharacters": {
           "type": "integer",
           "default": 10000,
           "minimum": 100,
           "maximum": 1000000,
-          "description": "Máximo de caracteres conservados por celda en la vista de resultados."
+          "description": "Maximum number of characters retained per cell in the result view."
         },
         "simpleDb.history.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Guardar historial local de consultas."
+          "description": "Store local query history."
         },
         "simpleDb.history.maxEntries": {
           "type": "integer",
           "default": 500,
           "minimum": 0,
           "maximum": 5000,
-          "description": "Número máximo de consultas conservadas en el historial."
+          "description": "Maximum number of queries retained in history."
         },
         "simpleDb.confirmDestructiveQueries": {
           "type": "boolean",
           "default": true,
-          "description": "Pedir confirmación antes de DROP o TRUNCATE."
+          "description": "Ask for confirmation before DROP or TRUNCATE."
         },
         "simpleDb.warnUnsafeDml": {
           "type": "boolean",
           "default": true,
-          "description": "Avisar antes de UPDATE o DELETE sin cláusula WHERE."
+          "description": "Warn before UPDATE or DELETE without a WHERE clause."
         },
         "simpleDb.csvDelimiter": {
           "type": "string",
           "default": ";",
-          "description": "Separador utilizado al exportar resultados a CSV."
+          "description": "Delimiter used when exporting results to CSV."
         },
         "simpleDb.csvProtectFormulaInjection": {
           "type": "boolean",
           "default": true,
-          "description": "Protege celdas CSV que comienzan por =, +, -, @, tabulador o retorno de carro para evitar que una hoja de cálculo las interprete como fórmulas."
+          "description": "Protect CSV cells that begin with =, +, -, @, tab, or carriage return so spreadsheet applications do not interpret them as formulas."
         }
       }
     }

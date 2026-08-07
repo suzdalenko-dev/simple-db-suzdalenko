@@ -58,7 +58,7 @@ class ConnectionManager extends EventEmitter {
   async _connect(profileId) {
     const profile = this.connectionStore.get(profileId);
     if (!profile) {
-      throw new Error('La conexión ya no existe.');
+      throw new Error('The connection no longer exists.');
     }
     this._setStatus(profileId, 'connecting');
     const password = await this.connectionStore.getPassword(profileId);
@@ -109,7 +109,7 @@ class ConnectionManager extends EventEmitter {
   async testConnection(profileId) {
     const profile = this.connectionStore.get(profileId);
     if (!profile) {
-      throw new Error('La conexión ya no existe.');
+      throw new Error('The connection no longer exists.');
     }
     const password = await this.connectionStore.getPassword(profileId);
     return this.testProfile(profile, password);
@@ -124,7 +124,7 @@ class ConnectionManager extends EventEmitter {
   getAdapter(profileId) {
     const adapter = this.adapters.get(profileId);
     if (!adapter?.isConnected()) {
-      throw new Error('La conexión no está conectada.');
+      throw new Error('The connection is not connected.');
     }
     return adapter;
   }

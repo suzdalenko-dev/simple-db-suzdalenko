@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Ejecutar Simple DB",
+      "name": "Run Simple DB",
       "type": "extensionHost",
       "request": "launch",
       "args": [

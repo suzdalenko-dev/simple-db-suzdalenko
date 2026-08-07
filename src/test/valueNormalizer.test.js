@@ -3,7 +3,7 @@
 const { normalizeRows, normalizeValue, truncateText } = require('../core/valueNormalizer');
 
 describe('valueNormalizer', () => {
-  it('conserva tipos escalares y normaliza valores especiales', () => {
+  it('preserves scalar types and normalizes special values', () => {
     expect(normalizeValue(null)).toBeNull();
     expect(normalizeValue(42)).toBe(42);
     expect(normalizeValue(true)).toBe(true);
@@ -13,7 +13,7 @@ describe('valueNormalizer', () => {
     );
   });
 
-  it('limita celdas grandes de forma explícita y no filas', () => {
+  it('explicitly limits large cells, not rows', () => {
     expect(truncateText('abcdefghij', 5)).toContain('abcde…');
     const rows = normalizeRows(
       [{ value: 'abcdefghij' }, { value: 'klmnopqrst' }],
@@ -24,7 +24,7 @@ describe('valueNormalizer', () => {
     expect(rows[0][0]).toContain('omitidos');
   });
 
-  it('genera una vista segura para binarios', () => {
+  it('generates a safe display value for binary data', () => {
     expect(normalizeValue(Buffer.from([0, 1, 2]))).toContain('<BINARY 3 bytes: 000102>');
   });
 });

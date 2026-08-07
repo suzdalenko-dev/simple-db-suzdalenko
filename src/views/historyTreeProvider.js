@@ -24,23 +24,23 @@ class HistoryTreeProvider {
 
   getTreeItem(node) {
     if (node.kind === 'empty') {
-      const item = new vscode.TreeItem('Sin consultas en el historial');
+      const item = new vscode.TreeItem('No queries in history');
       item.iconPath = new vscode.ThemeIcon('info');
       return item;
     }
 
     const entry = node.entry;
     const item = new vscode.TreeItem(
-      compactSql(entry.sql) || '(consulta vacía)',
+      compactSql(entry.sql) || '(empty query)',
       vscode.TreeItemCollapsibleState.None,
     );
     item.contextValue = 'simpleDb.historyEntry';
-    const affected = entry.affectedRows ? ` • ${entry.affectedRows} afectadas` : '';
-    item.description = `${entry.connectionName} • ${entry.rows} filas${affected} • ${entry.durationMs} ms`;
+    const affected = entry.affectedRows ? ` • ${entry.affectedRows} affected` : '';
+    item.description = `${entry.connectionName} • ${entry.rows} rows${affected} • ${entry.durationMs} ms`;
     item.iconPath = new vscode.ThemeIcon(entry.success ? 'pass-filled' : 'error');
     item.command = {
       command: 'simpleDb.openHistoryEntry',
-      title: 'Abrir consulta',
+      title: 'Open Query',
       arguments: [node],
     };
 

@@ -53,7 +53,7 @@ class HistoryStore {
       schema: entry.schema || '',
       sql:
         sql.length > MAX_SQL_CHARACTERS
-          ? `${sql.slice(0, MAX_SQL_CHARACTERS)}\n-- [Historial truncado]`
+          ? `${sql.slice(0, MAX_SQL_CHARACTERS)}\n-- [History truncated]`
           : sql,
       durationMs: Number(entry.durationMs || 0),
       rows: Number(entry.rows || 0),

@@ -24,7 +24,7 @@ class ResultPanel {
     if (!this.panel) {
       this.panel = vscode.window.createWebviewPanel(
         'simpleDb.results',
-        'Simple DB — Resultados',
+        'Simple DB — Results',
         vscode.ViewColumn.Beside,
         { enableScripts: true, retainContextWhenHidden: true },
       );
@@ -64,7 +64,7 @@ class ResultPanel {
         const filename = await vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
-            title: `Simple DB — Exportando ${format.toUpperCase()}`,
+            title: `Simple DB — Exporting ${format.toUpperCase()}`,
             cancellable: false,
           },
           () =>
@@ -75,7 +75,7 @@ class ResultPanel {
             ),
         );
         if (filename) {
-          vscode.window.showInformationMessage(`Simple DB: exportado a ${filename}`);
+          vscode.window.showInformationMessage(`Simple DB: exported to ${filename}`);
         }
         return;
       }
@@ -111,7 +111,7 @@ class ResultPanel {
   _html(webview, executionId) {
     const n = nonce();
     return `<!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -141,17 +141,17 @@ class ResultPanel {
   </style>
 </head>
 <body>
-  <header><strong>Simple DB</strong><span id="summary">Cargando…</span></header>
+  <header><strong>Simple DB</strong><span id="summary">Loading…</span></header>
   <div id="tabs"></div>
   <div id="toolbar" hidden>
-    <button id="prev" class="secondary">← Anterior</button>
-    <span>Página</span><input id="page" type="number" min="1" value="1"><span id="pages"></span>
-    <button id="next" class="secondary">Siguiente →</button>
-    <button id="copyCell" class="secondary">Copiar celda</button><button id="copyRow" class="secondary">Copiar fila</button><button id="copySelection" class="secondary">Copiar selección</button>
+    <button id="prev" class="secondary">← Previous</button>
+    <span>Page</span><input id="page" type="number" min="1" value="1"><span id="pages"></span>
+    <button id="next" class="secondary">Next →</button>
+    <button id="copyCell" class="secondary">Copy Cell</button><button id="copyRow" class="secondary">Copy Row</button><button id="copySelection" class="secondary">Copy Selection</button>
     <button data-export="csv">CSV</button><button data-export="json">JSON</button><button data-export="xlsx">XLSX</button>
     <span id="status"></span>
   </div>
-  <div id="grid"><div class="message">Cargando resultados…</div></div>
+  <div id="grid"><div class="message">Loading results…</div></div>
   <script nonce="${n}">
     const vscode = acquireVsCodeApi();
     const executionId = ${JSON.stringify(executionId)};
@@ -179,7 +179,7 @@ class ResultPanel {
       const set = currentSet();
       if (!set) return;
       if (set.kind === 'rows') { toolbar.hidden = false; requestPage(0); }
-      else { toolbar.hidden = true; grid.replaceChildren(messageNode(set.message || 'Sentencia ejecutada.', set.kind === 'error')); }
+      else { toolbar.hidden = true; grid.replaceChildren(messageNode(set.message || 'Statement executed.', set.kind === 'error')); }
     }
     function messageNode(text, error) {
       const div = document.createElement('div'); div.className = 'message' + (error ? ' error' : ''); div.textContent = text; return div;
@@ -211,7 +211,7 @@ class ResultPanel {
         if (!set) return;
         const button = document.createElement('button');
         button.className = 'tab' + (index === activeSet ? ' active' : '');
-        button.textContent = set.kind === 'rows' ? 'Resultado ' + (index + 1) + ' (' + set.rowCount + ')' : 'Mensaje ' + (index + 1);
+        button.textContent = set.kind === 'rows' ? 'Result ' + (index + 1) + ' (' + set.rowCount + ')' : 'Message ' + (index + 1);
         button.addEventListener('click', () => selectSet(index)); tabs.appendChild(button);
       });
     }
@@ -229,17 +229,17 @@ class ResultPanel {
       const body = document.createElement('tbody');
       data.rows.forEach((row, rowIndex) => { const tr = document.createElement('tr'); row.forEach((value, columnIndex) => { const td = document.createElement('td'); td.dataset.row = String(rowIndex); td.dataset.column = String(columnIndex); if (value === null) { td.textContent = 'NULL'; td.className = 'null'; } else td.textContent = String(value); td.title = value === null ? 'NULL' : String(value); td.addEventListener('click', (event) => { if (event.shiftKey && anchorCell) selectRange(anchorCell.row, rowIndex, anchorCell.column, columnIndex); else { anchorCell = { row: rowIndex, column: columnIndex }; selectRange(rowIndex, rowIndex, columnIndex, columnIndex); } }); tr.appendChild(td); }); body.appendChild(tr); });
       table.appendChild(body); grid.replaceChildren(table);
-      const pageCount = Math.max(1, set.pages); pageInput.value = String(activePage + 1); pageInput.max = String(pageCount); pages.textContent = 'de ' + pageCount;
+      const pageCount = Math.max(1, set.pages); pageInput.value = String(activePage + 1); pageInput.max = String(pageCount); pages.textContent = 'of ' + pageCount;
       prev.disabled = activePage <= 0; next.disabled = activePage >= pageCount - 1;
-      status.textContent = set.rowCount + ' filas' + (set.truncated ? ' · límite configurado alcanzado' : '');
+      status.textContent = set.rowCount + ' rows' + (set.truncated ? ' · configured limit reached' : '');
     }
     function renderMetadata(value) {
       metadata = value;
-      document.getElementById('summary').textContent = (value.connectionName || '') + ' · ' + (value.database || '') + ' · ' + (value.totalRows || 0) + ' filas' + (value.affectedRows ? ' · ' + value.affectedRows + ' afectadas' : '') + ' · ' + value.durationMs + ' ms · ' + value.status;
+      document.getElementById('summary').textContent = (value.connectionName || '') + ' · ' + (value.database || '') + ' · ' + (value.totalRows || 0) + ' rows' + (value.affectedRows ? ' · ' + value.affectedRows + ' affected' : '') + ' · ' + value.durationMs + ' ms · ' + value.status;
       renderTabs();
       const firstRows = value.sets.findIndex((set) => set?.kind === 'rows');
       const first = firstRows >= 0 ? firstRows : value.sets.findIndex(Boolean);
-      if (first >= 0) selectSet(first); else { toolbar.hidden = true; grid.replaceChildren(messageNode('Sin resultados.', false)); }
+      if (first >= 0) selectSet(first); else { toolbar.hidden = true; grid.replaceChildren(messageNode('No results.', false)); }
     }
     window.addEventListener('message', (event) => { const message = event.data; if (message.type === 'metadata') renderMetadata(message.metadata); else if (message.type === 'pageData') renderPage(message); });
     prev.addEventListener('click', () => requestPage(activePage - 1)); next.addEventListener('click', () => requestPage(activePage + 1));

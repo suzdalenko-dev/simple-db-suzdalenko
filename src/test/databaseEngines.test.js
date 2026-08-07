@@ -8,7 +8,7 @@ const {
 } = require('../databaseEngines');
 
 describe('databaseEngines', () => {
-  it('expone exactamente los cinco motores soportados', () => {
+  it('exposes exactly the five supported database engines', () => {
     expect(DATABASE_ENGINE_IDS).toEqual([
       'sqlite',
       'postgresql',
@@ -19,7 +19,7 @@ describe('databaseEngines', () => {
     expect(DATABASE_ENGINES).toHaveLength(5);
   });
 
-  it('define puertos y grupos de objetos propios de cada motor', () => {
+  it('defines engine-specific ports and object groups', () => {
     expect(getDatabaseEngine('sqlite').defaultPort).toBeNull();
     expect(getDatabaseEngine('postgresql').defaultPort).toBe(5432);
     expect(getDatabaseEngine('mysql').defaultPort).toBe(3306);
@@ -30,7 +30,7 @@ describe('databaseEngines', () => {
     expect(getDatabaseEngine('mysql').objectGroups).toContain('events');
   });
 
-  it('valida identificadores de motor sin aceptar valores desconocidos', () => {
+  it('validates engine identifiers without accepting unknown values', () => {
     expect(isDatabaseEngineId('oracle')).toBe(true);
     expect(isDatabaseEngineId('mongo')).toBe(false);
     expect(getDatabaseEngine('mongo')).toBeUndefined();

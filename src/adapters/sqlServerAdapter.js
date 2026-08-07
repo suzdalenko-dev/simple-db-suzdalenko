@@ -130,7 +130,7 @@ class SqlServerAdapter extends BaseAdapter {
 
   async begin(sessionId, context = {}) {
     if (this.transactions.has(sessionId)) {
-      throw new Error('Esta sesión ya tiene una transacción SQL Server activa.');
+      throw new Error('This session already has an active SQL Server transaction.');
     }
     try {
       const pool = await this._poolFor(context.database);
@@ -145,7 +145,7 @@ class SqlServerAdapter extends BaseAdapter {
   async commit(sessionId) {
     const transaction = this.transactions.get(sessionId);
     if (!transaction) {
-      throw new Error('No hay una transacción activa en esta sesión.');
+      throw new Error('There is no active transaction in this session.');
     }
     try {
       await transaction.commit();
@@ -232,7 +232,7 @@ class SqlServerAdapter extends BaseAdapter {
       }
     });
 
-    // El evento error necesita listener incluso usando la promesa de query().
+    // The error event needs a listener even when using the query() promise.
     request.on('error', () => {});
     this.activeExecutions.set(options.executionId, { request });
 

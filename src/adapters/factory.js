@@ -19,7 +19,7 @@ function createAdapter(profile, password) {
     case 'oracle':
       return new OracleAdapter(profile, password);
     default:
-      throw new Error(`Motor no soportado: ${profile.engine}`);
+      throw new Error(`Unsupported database engine: ${profile.engine}`);
   }
 }
 

@@ -113,7 +113,7 @@ function applyTransactionControl(control, wasInTransaction) {
 
 function assertWritableSql(sql) {
   if (readOnly && databaseChangedBy(sql)) {
-    const error = new Error('La conexión SQLite está configurada como solo lectura.');
+    const error = new Error('The SQLite connection is configured as read-only.');
     error.code = 'SQLITE_READONLY';
     throw error;
   }
@@ -141,7 +141,7 @@ function assertNoActiveWal() {
   try {
     if (fs.statSync(`${filePath}-wal`).size > 0) {
       const error = new Error(
-        'La base SQLite tiene un archivo WAL activo. Para evitar leer una instantánea incompleta, haz CHECKPOINT/cierra el proceso escritor y vuelve a conectar.',
+        'The SQLite database has an active WAL file. To avoid reading an incomplete snapshot, CHECKPOINT/close the writer process and reconnect.',
       );
       error.code = 'SQLITE_BUSY_WAL';
       throw error;
@@ -156,7 +156,7 @@ function assertDiskUnchanged() {
   const current = readDiskFingerprint();
   if (current !== diskFingerprint) {
     const error = new Error(
-      'El archivo SQLite fue modificado por otra aplicación desde que se abrió. Simple DB no lo sobrescribirá; desconecta y vuelve a conectar para recargarlo.',
+      'The SQLite file was modified by another application after it was opened. Simple DB will not overwrite it; disconnect and reconnect to reload it.',
     );
     error.code = 'SQLITE_BUSY_EXTERNAL';
     throw error;
@@ -179,7 +179,7 @@ function persistDatabase() {
     try {
       fs.unlinkSync(temporaryPath);
     } catch (_unlinkError) {
-      // El archivo temporal se limpiará en la próxima escritura si sigue presente.
+      // The temporary file will be cleaned up on the next write if it still exists.
     }
   }
   diskFingerprint = readDiskFingerprint();
@@ -201,7 +201,7 @@ async function openDatabase(payload) {
   readOnly = Boolean(payload.readOnly);
 
   if (readOnly && !fs.existsSync(filePath)) {
-    const error = new Error(`No existe el archivo SQLite: ${filePath}`);
+    const error = new Error(`SQLite file does not exist: ${filePath}`);
     error.code = 'SQLITE_CANTOPEN';
     throw error;
   }
@@ -231,7 +231,7 @@ async function openDatabase(payload) {
 
 function queryAll(sql) {
   if (!database) {
-    throw new Error('SQLite no está conectado.');
+    throw new Error('SQLite is not connected.');
   }
   assertDiskUnchanged();
   const results = database.exec(sql, { useBigInt: true });
@@ -266,10 +266,10 @@ function sendStreamEvent(requestId, event, payload) {
 
 async function executeSql(requestId, payload) {
   if (!database) {
-    throw new Error('SQLite no está conectado.');
+    throw new Error('SQLite is not connected.');
   }
-  // sql.js trabaja sobre un snapshot en memoria. Si otro proceso modifica el
-  // archivo (o crea WAL/journal), se obliga a reconectar también para lecturas.
+  // sql.js works on an in-memory snapshot. If another process modifies the file
+  // (or creates a WAL/journal), reconnecting is required before reads as well.
   assertDiskUnchanged();
   assertWritableSql(payload.sql);
 
@@ -381,7 +381,7 @@ async function handleCommand(message) {
       return executeSql(message.requestId, message.payload);
     case 'begin':
       if (inTransaction) {
-        throw new Error('Ya existe una transacción SQLite activa.');
+        throw new Error('An active SQLite transaction already exists.');
       }
       assertDiskUnchanged();
       database.run('BEGIN TRANSACTION');
@@ -392,7 +392,7 @@ async function handleCommand(message) {
       return {};
     case 'commit':
       if (!inTransaction) {
-        throw new Error('No hay una transacción SQLite activa.');
+        throw new Error('There is no active SQLite transaction.');
       }
       if (transactionDirty) assertDiskUnchanged();
       database.run('COMMIT');
@@ -425,7 +425,7 @@ async function handleCommand(message) {
       }
       return {};
     default:
-      throw new Error(`Comando SQLite desconocido: ${message.type}`);
+      throw new Error(`Unknown SQLite command: ${message.type}`);
   }
 }
 
