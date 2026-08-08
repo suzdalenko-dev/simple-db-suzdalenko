@@ -16,66 +16,20 @@ async function inputText(options) {
   });
 }
 
-async function inputNumber(options) {
-  const result = await inputText({
-    ...options,
-    value: String(options.value ?? options.defaultValue ?? ''),
-    required: true,
-    validateInput: undefined,
-  });
-  if (result === undefined) {
-    return undefined;
-  }
-  const number = Number(result);
-  if (!Number.isInteger(number) || number < (options.minimum ?? 0)) {
-    await vscode.window.showErrorMessage(
-      `${options.prompt}: enter a valid integer.`,
-    );
-    return inputNumber(options);
-  }
-  return number;
-}
-
-async function inputBoolean(title, label, value) {
-  const picked = await vscode.window.showQuickPick(
-    [
-      { label: value ? 'Yes' : 'No', value },
-      { label: value ? 'No' : 'Yes', value: !value },
-    ],
-    {
-      title,
-      placeHolder: label,
-      ignoreFocusOut: true,
-    },
-  );
-  return picked?.value;
-}
-
-async function chooseSqlitePath(existingProfile) {
-  if (existingProfile) {
-    return inputText({
-      title: 'Simple DB — Edit SQLite',
-      prompt: 'Full SQLite file path',
-      value: existingProfile.filePath,
-      required: true,
-    });
-  }
-
+async function chooseSqlitePath() {
   const mode = await vscode.window.showQuickPick(
     [
-      { label: '$(folder-opened) Open Existing File', value: 'open' },
-      { label: '$(new-file) Create New File', value: 'create' },
+      { label: '$(folder-opened) Open Existing Database', value: 'open' },
+      { label: '$(new-file) Create New Database', value: 'create' },
       { label: '$(edit) Enter Path Manually', value: 'manual' },
     ],
     {
-      title: 'Simple DB — SQLite File',
-      placeHolder: 'Choose how to specify the SQLite file',
+      title: 'Simple DB — SQLite Database',
+      placeHolder: 'Choose the SQLite database file',
       ignoreFocusOut: true,
     },
   );
-  if (!mode) {
-    return undefined;
-  }
+  if (!mode) return undefined;
 
   if (mode.value === 'open') {
     const selected = await vscode.window.showOpenDialog({
@@ -100,282 +54,128 @@ async function chooseSqlitePath(existingProfile) {
   }
 
   return inputText({
-    title: 'Simple DB — SQLite File',
+    title: 'Simple DB — SQLite Database',
     prompt: 'Full SQLite file path',
     required: true,
   });
 }
 
-async function promptConnection(options = {}) {
-  const existing = options.existingProfile;
-  let engineId = existing?.engine || options.engineId;
+function defaultProfile(engineId, name) {
+  const common = {
+    name,
+    engine: engineId,
+    connectTimeoutMs: 15000,
+    queryTimeoutMs: 300000,
+  };
 
+  switch (engineId) {
+    case 'sqlite':
+      return { ...common, filePath: '', readOnly: false };
+    case 'postgresql':
+      return {
+        ...common,
+        host: 'localhost',
+        port: 5432,
+        database: 'postgres',
+        user: 'postgres',
+        ssl: false,
+        trustServerCertificate: false,
+      };
+    case 'mysql':
+      return {
+        ...common,
+        host: 'localhost',
+        port: 3306,
+        database: '',
+        user: 'root',
+        ssl: false,
+        trustServerCertificate: false,
+      };
+    case 'sqlserver':
+      return {
+        ...common,
+        host: 'localhost',
+        port: 1433,
+        database: 'master',
+        user: 'sa',
+        instanceName: '',
+        encrypt: true,
+        trustServerCertificate: false,
+      };
+    case 'oracle':
+      return {
+        ...common,
+        host: 'localhost',
+        port: 1521,
+        serviceName: '',
+        connectString: '',
+        user: '',
+      };
+    default:
+      throw new Error(`Invalid database engine: ${engineId}`);
+  }
+}
+
+async function promptConnection(options = {}) {
+  let engineId = options.engineId;
   if (!engineId) {
     const enginePick = await vscode.window.showQuickPick(
       DATABASE_ENGINES.map((engine) => ({
         label: `$(database) ${engine.displayName}`,
         description:
-          engine.defaultPort === null ? 'Local file' : `Port ${engine.defaultPort}`,
+          engine.defaultPort === null ? 'Local file' : `Default port ${engine.defaultPort}`,
         value: engine.id,
       })),
       {
-        title: 'Simple DB — New Connection',
+        title: 'Simple DB — Create Connection',
         placeHolder: 'Select a database engine',
         ignoreFocusOut: true,
       },
     );
-    if (!enginePick) {
-      return null;
-    }
+    if (!enginePick) return null;
     engineId = enginePick.value;
   }
 
   const engine = getDatabaseEngine(engineId);
-  if (!engine) {
-    throw new Error(`Invalid database engine: ${engineId}`);
-  }
+  if (!engine) throw new Error(`Invalid database engine: ${engineId}`);
 
   const name = await inputText({
-    title: `Simple DB — ${existing ? 'Edit' : 'New'} ${engine.displayName} Connection`,
-    prompt: 'Connection display name',
-    value: existing?.name || '',
+    title: `Simple DB — Create ${engine.displayName} Connection`,
+    prompt: 'Connection name',
     required: true,
   });
-  if (name === undefined) {
-    return null;
-  }
+  if (name === undefined) return null;
 
-  const profile = {
-    ...existing,
-    name: name.trim(),
-    engine: engineId,
-  };
-
-  let password;
+  const profile = defaultProfile(engineId, name.trim());
   if (engineId === 'sqlite') {
-    const sqlitePath = await chooseSqlitePath(existing);
-    if (sqlitePath === undefined) {
-      return null;
-    }
-    const readOnly = await inputBoolean(
-      'Simple DB — SQLite',
-      'Open in read-only mode?',
-      existing?.readOnly || false,
-    );
-    if (readOnly === undefined) {
-      return null;
-    }
-    profile.filePath = sqlitePath;
-    profile.readOnly = readOnly;
-  } else if (engineId === 'oracle') {
-    const mode = await vscode.window.showQuickPick(
-      [
-        {
-          label: 'Host + port + service/PDB',
-          value: 'service',
-          description: 'Standard Oracle Easy Connect format',
-        },
-        {
-          label: 'Connect string / alias TNS',
-          value: 'connectString',
-          description: 'Use a connection string directly',
-        },
-      ],
-      {
-        title: 'Simple DB — Oracle',
-        placeHolder: 'Oracle connection mode',
-        ignoreFocusOut: true,
-      },
-    );
-    if (!mode) {
-      return null;
-    }
-
-    if (mode.value === 'service') {
-      profile.host = await inputText({
-        title: 'Simple DB — Oracle',
-        prompt: 'Server / host',
-        value: existing?.host || 'localhost',
-        required: true,
-      });
-      if (profile.host === undefined) return null;
-      profile.port = await inputNumber({
-        title: 'Simple DB — Oracle',
-        prompt: 'Port',
-        value: existing?.port || 1521,
-        minimum: 1,
-      });
-      if (profile.port === undefined) return null;
-      profile.serviceName = await inputText({
-        title: 'Simple DB — Oracle',
-        prompt: 'Service / PDB',
-        value: existing?.serviceName || existing?.database || '',
-        required: true,
-      });
-      if (profile.serviceName === undefined) return null;
-      profile.database = profile.serviceName;
-      profile.connectString = '';
-    } else {
-      profile.connectString = await inputText({
-        title: 'Simple DB — Oracle',
-        prompt: 'Connect string or TNS alias',
-        value: existing?.connectString || '',
-        required: true,
-      });
-      if (profile.connectString === undefined) return null;
-      profile.host = existing?.host || '';
-      profile.port = existing?.port || 1521;
-      profile.serviceName = existing?.serviceName || '';
-      profile.database = existing?.database || '';
-    }
-
-    profile.user = await inputText({
-      title: 'Simple DB — Oracle',
-      prompt: 'Username',
-      value: existing?.user || '',
-      required: true,
-    });
-    if (profile.user === undefined) return null;
-    password = await inputText({
-      title: 'Simple DB — Oracle',
-      prompt: existing ? 'Password (leave empty to keep the current one)' : 'Password',
-      password: true,
-      required: false,
-    });
-    if (password === undefined) return null;
-  } else {
-    profile.host = await inputText({
-      title: `Simple DB — ${engine.displayName}`,
-      prompt: 'Server / host',
-      value: existing?.host || 'localhost',
-      required: true,
-    });
-    if (profile.host === undefined) return null;
-
-    if (engineId === 'sqlserver') {
-      profile.instanceName = await inputText({
-        title: 'Simple DB — SQL Server',
-        prompt: 'Instance (optional; leave empty to use the TCP port)',
-        value: existing?.instanceName || '',
-      });
-      if (profile.instanceName === undefined) return null;
-    }
-
-    profile.port = await inputNumber({
-      title: `Simple DB — ${engine.displayName}`,
-      prompt: 'Port',
-      value: existing?.port || engine.defaultPort,
-      minimum: 1,
-    });
-    if (profile.port === undefined) return null;
-
-    profile.database = await inputText({
-      title: `Simple DB — ${engine.displayName}`,
-      prompt: engineId === 'mysql' ? 'Initial database (optional)' : 'Initial database',
-      value:
-        existing?.database ||
-        (engineId === 'postgresql' ? 'postgres' : engineId === 'sqlserver' ? 'master' : ''),
-      required: engineId !== 'mysql',
-    });
-    if (profile.database === undefined) return null;
-
-    profile.user = await inputText({
-      title: `Simple DB — ${engine.displayName}`,
-      prompt: 'Username',
-      value: existing?.user || '',
-      required: true,
-    });
-    if (profile.user === undefined) return null;
-
-    password = await inputText({
-      title: `Simple DB — ${engine.displayName}`,
-      prompt: existing ? 'Password (leave empty to keep the current one)' : 'Password',
-      password: true,
-      required: false,
-    });
-    if (password === undefined) return null;
-
-    if (engineId === 'sqlserver') {
-      profile.encrypt = await inputBoolean(
-        'Simple DB — SQL Server',
-        'Encrypt the connection?',
-        existing?.encrypt !== false,
-      );
-      if (profile.encrypt === undefined) return null;
-      profile.trustServerCertificate = await inputBoolean(
-        'Simple DB — SQL Server',
-        'Trust the server certificate?',
-        existing?.trustServerCertificate || false,
-      );
-      if (profile.trustServerCertificate === undefined) return null;
-    } else {
-      profile.ssl = await inputBoolean(
-        `Simple DB — ${engine.displayName}`,
-        'Use SSL/TLS?',
-        existing?.ssl || false,
-      );
-      if (profile.ssl === undefined) return null;
-      if (profile.ssl) {
-        profile.trustServerCertificate = await inputBoolean(
-          `Simple DB — ${engine.displayName}`,
-          'Accept an unverified certificate?',
-          existing?.trustServerCertificate || false,
-        );
-        if (profile.trustServerCertificate === undefined) return null;
-      } else {
-        profile.trustServerCertificate = false;
-      }
-    }
+    const filePath = await chooseSqlitePath();
+    if (filePath === undefined) return null;
+    profile.filePath = filePath;
+    return { profile, password: undefined };
   }
 
-  profile.connectTimeoutMs = await inputNumber({
-    title: `Simple DB — ${engine.displayName}`,
-    prompt: 'Connection timeout (ms)',
-    value: existing?.connectTimeoutMs ?? 15000,
-    minimum: 1,
+  const password = await inputText({
+    title: `Simple DB — ${engine.displayName} Password`,
+    prompt: 'Password (optional; stored securely and never written to the JSON file)',
+    password: true,
+    required: false,
   });
-  if (profile.connectTimeoutMs === undefined) return null;
+  if (password === undefined) return null;
+  return { profile, password };
+}
 
-  profile.queryTimeoutMs = await inputNumber({
-    title: `Simple DB — ${engine.displayName}`,
-    prompt: 'Query timeout (ms; 0 = no timeout)',
-    value: existing?.queryTimeoutMs ?? 300000,
-    minimum: 0,
+async function promptPassword(profile) {
+  const engine = getDatabaseEngine(profile.engine);
+  return inputText({
+    title: `Simple DB — Set Password for ${profile.name}`,
+    prompt: `${engine?.displayName || profile.engine} password (stored in VS Code SecretStorage)`,
+    password: true,
+    required: false,
   });
-  if (profile.queryTimeoutMs === undefined) return null;
-
-  const finish = await vscode.window.showQuickPick(
-    [
-      {
-        label: '$(beaker) Test Connection and Save',
-        value: 'test',
-        description: 'Recommended',
-      },
-      {
-        label: '$(save) Save without Testing',
-        value: 'save',
-      },
-    ],
-    {
-      title: `Simple DB — ${profile.name}`,
-      placeHolder: 'How do you want to finish?',
-      ignoreFocusOut: true,
-    },
-  );
-  if (!finish) {
-    return null;
-  }
-
-  const effectivePassword =
-    existing && password === '' ? options.existingPassword || '' : password || '';
-  return {
-    profile,
-    password: existing && password === '' ? undefined : password,
-    effectivePassword,
-    testBeforeSave: finish.value === 'test',
-  };
 }
 
 module.exports = {
+  defaultProfile,
   promptConnection,
+  promptPassword,
 };

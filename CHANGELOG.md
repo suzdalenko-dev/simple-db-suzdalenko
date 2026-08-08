@@ -2,6 +2,20 @@
 
 All notable changes to Simple DB are documented in this file.
 
+## Unreleased
+
+### Added
+
+- One readable JSON file per database connection, stored locally by Simple DB.
+- Automatic migration of existing 0.1.1 connection profiles to JSON files.
+- `Open Connection JSON`, `Set Password`, and `Open Connections Folder` actions.
+- A native `Simple DB` editor context submenu containing the six main database actions.
+
+### Changed
+
+- Simplified connection creation: choose the engine and name, optionally enter a secure network password, then edit all non-secret connection parameters together in JSON.
+- Passwords remain in VS Code `SecretStorage` and are explicitly rejected from connection JSON files.
+
 ## 0.1.1 - 2026-08-07
 
 ### Added

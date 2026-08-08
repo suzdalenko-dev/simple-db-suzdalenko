@@ -1,5 +1,8 @@
 'use strict';
 
+const fs = require('node:fs/promises');
+const os = require('node:os');
+const path = require('node:path');
 const { ConnectionStore, PROFILES_KEY } = require('../storage/connectionStore');
 
 function memoryMemento() {
@@ -50,7 +53,7 @@ describe('ConnectionStore', () => {
       { name: 'MySQL', engine: 'mysql', host: 'localhost', port: 3306, user: 'u' },
       'old-password',
     );
-    await store.save({ ...profile, name: 'MySQL editado' }, undefined, {
+    await store.save({ ...profile, name: 'MySQL edited' }, undefined, {
       keepExistingPassword: true,
     });
     await expect(store.getPassword(profile.id)).resolves.toBe('old-password');
@@ -73,5 +76,139 @@ describe('ConnectionStore', () => {
     await store.delete(one.id);
     expect(store.get(one.id)).toBeUndefined();
     await expect(store.getPassword(one.id)).resolves.toBe('');
+  });
+});
+
+describe('ConnectionStore JSON files', () => {
+  let temporaryDirectory;
+
+  afterEach(async () => {
+    if (temporaryDirectory) {
+      await fs.rm(temporaryDirectory, { recursive: true, force: true });
+      temporaryDirectory = undefined;
+    }
+  });
+
+  async function jsonStore(state, secrets) {
+    temporaryDirectory = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'simple-db-connections-'),
+    );
+    const directoryPath = path.join(temporaryDirectory, 'connections');
+    const store = new ConnectionStore(state, secrets, { directoryPath });
+    return { store, directoryPath };
+  }
+
+  it('migrates an existing profile to a readable JSON file without its password', async () => {
+    const state = memoryMemento();
+    const secrets = memorySecrets();
+    const legacyStore = new ConnectionStore(state, secrets);
+    const legacyProfile = await legacyStore.save(
+      {
+        name: 'Production PG',
+        engine: 'postgresql',
+        host: 'db.internal',
+        port: 5432,
+        database: 'app',
+        user: 'reader',
+        ssl: true,
+      },
+      'super-secret',
+    );
+    const { store } = await jsonStore(state, secrets);
+
+    const initialized = await store.initialize();
+    const filePath = store.connectionFile(legacyProfile.id);
+    const document = JSON.parse(await fs.readFile(filePath, 'utf8'));
+
+    expect(initialized.migrated).toBe(1);
+    expect(document).toMatchObject({
+      id: legacyProfile.id,
+      name: 'Production PG',
+      engine: 'postgresql',
+      host: 'db.internal',
+      port: 5432,
+      database: 'app',
+      user: 'reader',
+    });
+    expect(document).not.toHaveProperty('password');
+    await expect(store.getPassword(legacyProfile.id)).resolves.toBe('super-secret');
+  });
+
+  it('reloads a connection after its JSON file is edited and keeps the secret separate', async () => {
+    const state = memoryMemento();
+    const secrets = memorySecrets();
+    const { store } = await jsonStore(state, secrets);
+    await store.initialize();
+    const profile = await store.save(
+      {
+        name: 'MySQL Local',
+        engine: 'mysql',
+        host: 'localhost',
+        port: 3306,
+        database: 'app',
+        user: 'root',
+      },
+      'mysql-secret',
+    );
+    const filePath = store.connectionFile(profile.id);
+    const document = JSON.parse(await fs.readFile(filePath, 'utf8'));
+    document.host = 'mysql.internal';
+    document.port = 3307;
+    await fs.writeFile(filePath, `${JSON.stringify(document, null, 2)}\n`);
+
+    const reloaded = await store.reloadFile(filePath);
+
+    expect(reloaded.host).toBe('mysql.internal');
+    expect(reloaded.port).toBe(3307);
+    await expect(store.getPassword(profile.id)).resolves.toBe('mysql-secret');
+  });
+
+  it('rejects passwords in JSON connection files', async () => {
+    const state = memoryMemento();
+    const secrets = memorySecrets();
+    const { store } = await jsonStore(state, secrets);
+    await store.initialize();
+    const profile = await store.save(
+      {
+        name: 'Oracle',
+        engine: 'oracle',
+        host: 'oracle.internal',
+        port: 1521,
+        serviceName: 'ORCLPDB1',
+        user: 'reader',
+      },
+      'secret',
+    );
+    const filePath = store.connectionFile(profile.id);
+    const document = JSON.parse(await fs.readFile(filePath, 'utf8'));
+    document.password = 'must-not-be-here';
+    await fs.writeFile(filePath, `${JSON.stringify(document, null, 2)}\n`);
+
+    await expect(store.reloadFile(filePath)).rejects.toThrow(/do not store passwords/i);
+  });
+
+  it('removes the JSON file and secure password when deleting a connection', async () => {
+    const state = memoryMemento();
+    const secrets = memorySecrets();
+    const { store } = await jsonStore(state, secrets);
+    await store.initialize();
+    const profile = await store.save(
+      {
+        name: 'SQL Server',
+        engine: 'sqlserver',
+        host: 'sql.internal',
+        port: 1433,
+        database: 'master',
+        user: 'sa',
+      },
+      'secret',
+    );
+    const filePath = store.connectionFile(profile.id);
+
+    await store.delete(profile.id);
+
+    await expect(fs.access(filePath)).rejects.toThrow();
+    expect(store.get(profile.id)).toBeUndefined();
+    await expect(store.getPassword(profile.id)).resolves.toBe('');
   });
 });
