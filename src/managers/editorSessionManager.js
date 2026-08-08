@@ -140,39 +140,43 @@ class EditorSessionManager {
   }
 
   async _pickConnection(session, document) {
-    while (true) {
-      const profiles = this.connectionStore.list();
-      const items = profiles.map((profile) => ({
-        label:
-          (profile.id === session?.profileId ? '$(check) ' : '$(database) ') +
-          profile.name,
-        description: getDatabaseEngine(profile.engine)?.displayName || profile.engine,
-        detail: databaseForProfile(profile),
-        profile,
-      }));
-      items.push({
+    const profiles = this.connectionStore.list();
+    const items = profiles.map((profile) => ({
+      label:
+        (profile.id === session?.profileId ? '$(check) ' : '$(database) ') +
+        profile.name,
+      description: getDatabaseEngine(profile.engine)?.displayName || profile.engine,
+      detail: databaseForProfile(profile),
+      profile,
+    }));
+    items.push(
+      {
         label: '$(add) Create New Connection...',
         description: 'Simple DB',
         createConnection: true,
-      });
-      const pick = await vscode.window.showQuickPick(items, {
-        title: 'Simple DB — Select Connection for SQL File',
-        placeHolder: session
-          ? 'Choose a different connection for this SQL file'
-          : 'Choose the connection this SQL file should use',
-        ignoreFocusOut: true,
-      });
-      if (!pick) return null;
-      if (!pick.createConnection) return pick.profile;
+      },
+      {
+        label: '$(close) Cancel / Close',
+        description: 'Dismiss this menu',
+        cancel: true,
+      },
+    );
+    const pick = await vscode.window.showQuickPick(items, {
+      title: 'Simple DB — Select Connection for SQL File',
+      placeHolder: session
+        ? 'Choose a different connection for this SQL file'
+        : 'Choose the connection this SQL file should use',
+      ignoreFocusOut: false,
+    });
+    if (!pick || pick.cancel) return null;
+    if (!pick.createConnection) return pick.profile;
 
-      const created = await vscode.commands.executeCommand('simpleDb.addConnection');
-      if (created) {
-        if (document) {
-          await vscode.window.showTextDocument(document, { preview: false });
-        }
-        return created;
-      }
+    const created = await vscode.commands.executeCommand('simpleDb.addConnection');
+    if (!created) return null;
+    if (document) {
+      await vscode.window.showTextDocument(document, { preview: false });
     }
+    return created;
   }
 
   async ensureSession(document) {

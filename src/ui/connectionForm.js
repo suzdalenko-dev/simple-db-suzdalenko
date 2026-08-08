@@ -9,7 +9,7 @@ async function inputText(options) {
     prompt: options.prompt,
     value: options.value ?? '',
     password: options.password === true,
-    ignoreFocusOut: true,
+    ignoreFocusOut: false,
     validateInput: options.required
       ? (value) => (value.trim() ? undefined : 'This field is required.')
       : options.validateInput,
@@ -22,14 +22,15 @@ async function chooseSqlitePath() {
       { label: '$(folder-opened) Open Existing Database', value: 'open' },
       { label: '$(new-file) Create New Database', value: 'create' },
       { label: '$(edit) Enter Path Manually', value: 'manual' },
+      { label: '$(close) Cancel / Close', value: 'cancel' },
     ],
     {
       title: 'Simple DB — SQLite Database',
       placeHolder: 'Choose the SQLite database file',
-      ignoreFocusOut: true,
+      ignoreFocusOut: false,
     },
   );
-  if (!mode) return undefined;
+  if (!mode || mode.value === 'cancel') return undefined;
 
   if (mode.value === 'open') {
     const selected = await vscode.window.showOpenDialog({
@@ -120,19 +121,22 @@ async function promptConnection(options = {}) {
   let engineId = options.engineId;
   if (!engineId) {
     const enginePick = await vscode.window.showQuickPick(
-      DATABASE_ENGINES.map((engine) => ({
-        label: `$(database) ${engine.displayName}`,
-        description:
-          engine.defaultPort === null ? 'Local file' : `Default port ${engine.defaultPort}`,
-        value: engine.id,
-      })),
+      [
+        ...DATABASE_ENGINES.map((engine) => ({
+          label: `$(database) ${engine.displayName}`,
+          description:
+            engine.defaultPort === null ? 'Local file' : `Default port ${engine.defaultPort}`,
+          value: engine.id,
+        })),
+        { label: '$(close) Cancel / Close', value: 'cancel' },
+      ],
       {
         title: 'Simple DB — Create Connection',
         placeHolder: 'Select a database engine',
-        ignoreFocusOut: true,
+        ignoreFocusOut: false,
       },
     );
-    if (!enginePick) return null;
+    if (!enginePick || enginePick.value === 'cancel') return null;
     engineId = enginePick.value;
   }
 

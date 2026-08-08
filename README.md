@@ -1,6 +1,6 @@
 # Simple DB
 
-Simple DB `0.1.4` is a Visual Studio Code extension written entirely in JavaScript for working with **SQLite, PostgreSQL, MySQL, SQL Server, and Oracle** through a single interface.
+Simple DB `0.1.5` is a Visual Studio Code extension written entirely in JavaScript for working with **SQLite, PostgreSQL, MySQL, SQL Server, and Oracle** through a single interface.
 
 The extension opens regular VS Code SQL documents and loads `src/extension.js` directly: there is no TypeScript, `tsconfig.json`, `dist` folder, or compilation step.
 
@@ -25,10 +25,10 @@ The extension opens regular VS Code SQL documents and loads `src/extension.js` d
 
 ## Quick start
 
-1. Open **Simple DB** in the Activity Bar and choose **Create Connection**.
+1. Open **Simple DB** in the Activity Bar and choose **Create Connection**. The Command Palette exposes one Simple DB entry, **Simple DB: Open Configuration**, which opens this same view.
 2. Select the database engine and enter a connection name. SQLite uses the native file picker; network databases create a JSON profile with the correct default parameters.
 3. Edit the generated JSON if needed, press `Ctrl+S`, then use **Test Connection** or **Connect** from the connection menu. Passwords stay outside JSON in VS Code `SecretStorage`.
-4. Open or create any `.sql` file. Click the database icon or **Simple DB: Select Connection** in the status bar and choose the connection this file should use. The picker also offers **Create New Connection...**. If you press `Ctrl+Enter` before choosing, Simple DB opens the same picker and then attaches the selected connection automatically.
+4. Open or create any `.sql` file. Right-click and use **Simple DB > Select / Change Connection...**, or click the database status-bar item, to choose the connection this file should use. The picker also offers **Create New Connection...**. If you press `Ctrl+Enter` before choosing, Simple DB opens the same picker and then attaches the selected connection automatically.
 5. Press `Ctrl+Enter` (**Run Statement**) to run the selection or statement at the cursor. Press `F5` (**Run Script**) for the entire document. Saved SQL files keep their selected connection when closed and reopened.
 6. Results appear automatically in the resizable **Simple DB — Results** panel below the SQL editor. `F12` / **Go to Definition** opens the implementation/source; **Go to Declaration** opens the declaration when the engine exposes a separate one.
 
@@ -42,7 +42,7 @@ The extension opens regular VS Code SQL documents and loads `src/extension.js` d
 | SQL Server | `mssql` | databases, schemas, tables, views, procedures/functions, indexes, triggers, sequences, types, synonyms, `GO` |
 | Oracle | `oracledb` Thin | schemas, tables, views/materialized views, procedures/functions, packages, indexes, triggers, sequences, types, synonyms, PL/SQL |
 
-Oracle uses the default `node-oracledb` Thin mode, so normal connections do not require Oracle Client to be installed. Simple DB `0.1.4` uses SQL authentication with a username and password for SQL Server.
+Oracle uses the default `node-oracledb` Thin mode, so normal connections do not require Oracle Client to be installed. Simple DB `0.1.5` uses SQL authentication with a username and password for SQL Server.
 
 ## No imposed row limit by default
 
@@ -145,13 +145,16 @@ The `id` is generated and managed by Simple DB. Do not change it. Use **Simple D
 
 Right-clicking inside an editor now shows a native **Simple DB** submenu with the main actions:
 
+- Open Configuration
 - Select / Change Connection...
 - Run Statement (`Ctrl+Enter`)
 - Run Script (`F5`)
 - Go to Definition (`F12`)
 - Go to Declaration
 
-The lower-right status bar shows the profile currently attached to the SQL file. **Select / Change Connection...** marks that profile in the picker and lets the file switch to another one. If there are no profiles yet, **Create New Connection...** is available directly in the picker.
+**Open Configuration** opens the same Simple DB Activity Bar view as clicking the Simple DB icon, where all configured database connections and their explorer actions are available. The Command Palette intentionally exposes only **Simple DB: Open Configuration**; SQL-file actions stay in this right-click submenu, their keyboard shortcuts, and the SQL editor controls.
+
+The lower-right status bar shows the profile currently attached to the SQL file. **Select / Change Connection...** marks that profile in the picker and lets the file switch to another one. If there are no profiles yet, **Create New Connection...** is available directly in the picker. The picker and connection-creation prompts can be cancelled with **Cancel / Close**, `Esc`, or by clicking outside. Cancelling nested connection creation closes the selection flow instead of reopening it.
 
 Navigation resolves against the connection attached to the SQL file and opens database-provided source/DDL in a read-only virtual SQL document. Oracle package **Go to Declaration** targets the package specification while **Go to Definition** targets the package body. When an overload can be identified from the call arguments, Simple DB selects it; when several overloads remain valid, it presents all valid locations instead of guessing. `alias.column` references are resolved back to their underlying table/view column, Oracle and SQL Server synonyms are followed to the target object when it is local/resolvable, and navigation can continue from one opened database definition into another. If catalog/source permissions are insufficient, Simple DB reports that explicitly.
 

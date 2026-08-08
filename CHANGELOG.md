@@ -2,6 +2,23 @@
 
 All notable changes to Simple DB are documented in this file.
 
+## 0.1.5 - 2026-08-08
+
+### Added
+
+- **Simple DB: Open Configuration** as the single Simple DB action exposed in the Command Palette. It opens the same Simple DB Activity Bar container as clicking the Simple DB icon.
+- **Open Configuration** at the top of the SQL editor's **Simple DB** right-click submenu.
+- A visible **Cancel / Close** choice in the SQL-file connection picker and connection-creation engine/SQLite selectors.
+
+### Changed
+
+- SQL-file actions are kept in the editor's **Simple DB** context submenu instead of the Command Palette: connection selection, statement/script execution, and definition/declaration navigation.
+- Quick-pick/input flows can be dismissed with `Esc` or by clicking outside instead of forcing focus to stay in the prompt.
+
+### Fixed
+
+- Cancelling **Create New Connection...** from the SQL-file connection picker now closes the whole selection flow instead of reopening the parent picker.
+
 ## 0.1.4 - 2026-08-08
 
 ### Added

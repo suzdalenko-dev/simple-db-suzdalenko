@@ -44,15 +44,21 @@ async function pickProfile(connectionStore, title = 'Simple DB — Select Connec
   if (!profiles.length) {
     throw new Error('No connections are configured. Create a connection first.');
   }
-  const pick = await vscode.window.showQuickPick(
-    profiles.map((profile) => ({
-      label: `$(database) ${profile.name}`,
-      description: getDatabaseEngine(profile.engine)?.displayName || profile.engine,
-      profile,
-    })),
-    { title, ignoreFocusOut: true },
-  );
-  return pick?.profile || null;
+  const items = profiles.map((profile) => ({
+    label: `$(database) ${profile.name}`,
+    description: getDatabaseEngine(profile.engine)?.displayName || profile.engine,
+    profile,
+  }));
+  items.push({
+    label: '$(close) Cancel / Close',
+    description: 'Dismiss this menu',
+    cancel: true,
+  });
+  const pick = await vscode.window.showQuickPick(items, {
+    title,
+    ignoreFocusOut: false,
+  });
+  return pick && !pick.cancel ? pick.profile : null;
 }
 
 function databaseContext(profile, node) {
@@ -194,6 +200,10 @@ async function activate(context) {
     sqlNavigationProvider,
     editorSessionManager,
   );
+
+  registerCommand(context, 'simpleDb.openConfiguration', async () => {
+    await vscode.commands.executeCommand('workbench.view.extension.simpleDb');
+  });
 
   registerCommand(context, 'simpleDb.addConnection', async (node) => {
     const form = await promptConnection({ engineId: node?.engineId });
@@ -480,7 +490,7 @@ async function activate(context) {
     const name = await vscode.window.showInputBox({
       title: `Simple DB — Create ${OBJECT_LABELS[objectType] || objectType}`,
       prompt: 'New object name',
-      ignoreFocusOut: true,
+      ignoreFocusOut: false,
       validateInput: (value) => (value.trim() ? null : 'Name is required.'),
     });
     if (!name) return;

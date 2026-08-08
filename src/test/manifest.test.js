@@ -3,9 +3,29 @@
 const manifest = require('../../package.json');
 
 describe('extension manifest', () => {
-  it('ships 0.1.4 without the removed History feature', () => {
-    expect(manifest.version).toBe('0.1.4');
+  it('ships 0.1.5 without the removed History feature', () => {
+    expect(manifest.version).toBe('0.1.5');
     expect(JSON.stringify(manifest).toLowerCase()).not.toContain('history');
+  });
+
+  it('exposes only Open Configuration in the Command Palette', () => {
+    const commandIds = manifest.contributes.commands.map((entry) => entry.command);
+    const hiddenIds = new Set(
+      manifest.contributes.menus.commandPalette
+        .filter((entry) => entry.when === 'false')
+        .map((entry) => entry.command),
+    );
+    expect(commandIds.filter((commandId) => !hiddenIds.has(commandId))).toEqual([
+      'simpleDb.openConfiguration',
+    ]);
+    expect(
+      manifest.contributes.commands.find(
+        (command) => command.command === 'simpleDb.openConfiguration',
+      ),
+    ).toMatchObject({
+      title: 'Open Configuration',
+      category: 'Simple DB',
+    });
   });
 
   it('puts connection selection next to query execution in SQL editors', () => {
@@ -29,6 +49,7 @@ describe('extension manifest', () => {
   it('keeps the SQL editor context menu focused on Simple DB daily actions', () => {
     const menu = manifest.contributes.menus['simpleDb.editorContextMenu'];
     expect(menu.map((entry) => entry.command)).toEqual([
+      'simpleDb.openConfiguration',
       'simpleDb.changeEditorConnection',
       'simpleDb.executeCurrent',
       'simpleDb.executeDocument',
