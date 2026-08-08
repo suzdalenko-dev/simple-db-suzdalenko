@@ -200,6 +200,7 @@ class ConnectionsTreeProvider {
         );
         item.contextValue = 'simpleDb.message';
         item.iconPath = new vscode.ThemeIcon(node.icon || 'info');
+        if (node.command) item.command = node.command;
         return item;
       }
     }
@@ -221,7 +222,16 @@ class ConnectionsTreeProvider {
           .sort((a, b) => a.name.localeCompare(b.name));
         return profiles.length
           ? profiles.map((profile) => ({ kind: 'connection', profileId: profile.id }))
-          : [this._message('No connections configured', node.engineId)];
+          : [
+              {
+                ...this._message('Create connection…', node.engineId, 'add'),
+                command: {
+                  command: 'simpleDb.addConnection',
+                  title: 'Create Connection',
+                  arguments: [{ kind: 'engine', engineId: node.engineId }],
+                },
+              },
+            ];
       }
 
       if (node.kind === 'connection') {

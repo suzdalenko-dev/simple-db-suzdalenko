@@ -16,7 +16,7 @@ const {
 const { ConnectionStore } = require('./storage/connectionStore');
 const { HistoryStore } = require('./storage/historyStore');
 const { ResultStore } = require('./storage/resultStore');
-const { promptConnection } = require('./ui/connectionForm');
+const { promptConnection, promptPassword } = require('./ui/connectionForm');
 const { ConnectionsTreeProvider } = require('./views/connectionsTreeProvider');
 const { HistoryTreeProvider } = require('./views/historyTreeProvider');
 const { ResultPanel } = require('./views/resultPanel');
@@ -124,7 +124,15 @@ function registerCommand(context, commandId, handler) {
 }
 
 async function activate(context) {
-  const connectionStore = new ConnectionStore(context.globalState, context.secrets);
+  const connectionStore = new ConnectionStore(context.globalState, context.secrets, {
+    directoryPath: path.join(context.globalStorageUri.fsPath, 'connections'),
+  });
+  const connectionLoad = await connectionStore.initialize();
+  if (connectionLoad.errors.length > 0) {
+    vscode.window.showWarningMessage(
+      `Simple DB: ${connectionLoad.errors.length} connection JSON file(s) could not be loaded. Open the Connections folder to review them.`,
+    );
+  }
   const connectionManager = new ConnectionManager(connectionStore);
   const editorSessionManager = new EditorSessionManager(
     connectionStore,
@@ -174,21 +182,28 @@ async function activate(context) {
   registerCommand(context, 'simpleDb.addConnection', async (node) => {
     const form = await promptConnection({ engineId: node?.engineId });
     if (!form) return;
-    if (form.testBeforeSave) {
-      const result = await connectionManager.testProfile(
-        form.profile,
-        form.effectivePassword,
-      );
-      vscode.window.showInformationMessage(
-        `Simple DB: connection successful (${result.elapsedMs} ms) · ${result.serverVersion}`,
-      );
-    }
     const saved = await connectionStore.save(form.profile, form.password);
     connectionsProvider.refresh();
-    vscode.window.showInformationMessage(`Simple DB: connection "${saved.name}" saved.`);
+    const filePath = connectionStore.connectionFile(saved.id);
+    const document = await vscode.workspace.openTextDocument(filePath);
+    await vscode.window.showTextDocument(document, { preview: false });
+    vscode.window.showInformationMessage(
+      `Simple DB: "${saved.name}" created. Edit the JSON, press Ctrl+S, then test or connect.`,
+    );
   });
 
-  registerCommand(context, 'simpleDb.refreshConnections', () => {
+  registerCommand(context, 'simpleDb.refreshConnections', async () => {
+    const hasActiveConnection = connectionStore
+      .list()
+      .some((profile) => connectionManager.isConnected(profile.id));
+    if (!hasActiveConnection) {
+      const result = await connectionStore.reload();
+      if (result.errors.length > 0) {
+        vscode.window.showWarningMessage(
+          `Simple DB: ${result.errors.length} connection JSON file(s) could not be loaded.`,
+        );
+      }
+    }
     connectionsProvider.refresh();
   });
 
@@ -222,7 +237,7 @@ async function activate(context) {
   });
 
   registerCommand(context, 'simpleDb.testConnection', async (node) => {
-    const profile = profileForNode(connectionStore, node);
+    const profile = profileForNode(connectionStore, node) || (await pickProfile(connectionStore));
     if (!profile) throw new Error('Connection not found.');
     const result = await connectionManager.testConnection(profile.id);
     vscode.window.showInformationMessage(
@@ -233,43 +248,48 @@ async function activate(context) {
   registerCommand(context, 'simpleDb.editConnection', async (node) => {
     const profile = profileForNode(connectionStore, node);
     if (!profile) throw new Error('Connection not found.');
-    const existingPassword = await connectionStore.getPassword(profile.id);
-    const form = await promptConnection({
-      existingProfile: profile,
-      existingPassword,
-    });
-    if (!form) return;
-
-    if (form.testBeforeSave) {
-      const result = await connectionManager.testProfile(
-        form.profile,
-        form.effectivePassword,
-      );
-      vscode.window.showInformationMessage(
-        `Simple DB: settings verified in ${result.elapsedMs} ms · ${result.serverVersion}`,
-      );
-    }
-
     if (connectionManager.isConnected(profile.id)) {
       const transactions = connectionManager.transactionCount(profile.id);
       const executions = connectionManager.executionCount(profile.id);
       const text = transactions > 0 || executions > 0
-        ? `Saving requires disconnecting: ${executions} query/queries will be cancelled and ${transactions} transaction(s) will be rolled back.`
-        : 'Saving requires disconnecting the active connection.';
+        ? `Editing requires disconnecting: ${executions} query/queries will be cancelled and ${transactions} transaction(s) will be rolled back.`
+        : 'Editing requires disconnecting the active connection.';
       const answer = await vscode.window.showWarningMessage(
         text,
         { modal: true },
         transactions > 0 || executions > 0
-          ? 'Save, cancel queries, and ROLLBACK'
-          : 'Save and disconnect',
+          ? 'Disconnect, cancel queries, and ROLLBACK'
+          : 'Disconnect and edit',
       );
       if (!answer) return;
       await connectionManager.disconnect(profile.id);
     }
-    await connectionStore.save(form.profile, form.password, {
-      keepExistingPassword: form.password === undefined,
-    });
-    connectionsProvider.refresh();
+    const filePath = connectionStore.connectionFile(profile.id);
+    if (!filePath) throw new Error('Connection JSON file not found.');
+    const document = await vscode.workspace.openTextDocument(filePath);
+    await vscode.window.showTextDocument(document, { preview: false });
+  });
+
+  registerCommand(context, 'simpleDb.setPassword', async (node) => {
+    const profile = profileForNode(connectionStore, node) || (await pickProfile(connectionStore));
+    if (!profile) return;
+    if (profile.engine === 'sqlite') {
+      vscode.window.showInformationMessage('Simple DB: SQLite connections do not use a password.');
+      return;
+    }
+    const password = await promptPassword(profile);
+    if (password === undefined) return;
+    await connectionStore.setPassword(profile.id, password);
+    vscode.window.showInformationMessage(
+      `Simple DB: password for "${profile.name}" stored securely.`,
+    );
+  });
+
+  registerCommand(context, 'simpleDb.openConnectionsFolder', async () => {
+    await vscode.commands.executeCommand(
+      'revealFileInOS',
+      vscode.Uri.file(connectionStore.connectionDirectory()),
+    );
   });
 
   registerCommand(context, 'simpleDb.deleteConnection', async (node) => {
@@ -600,6 +620,37 @@ async function activate(context) {
     const entry = historyEntry(node);
     if (entry) await historyStore.delete(entry.id);
   });
+
+  const connectionFileSaveDisposable = vscode.workspace.onDidSaveTextDocument(
+    async (document) => {
+      const filePath = document.uri.fsPath;
+      if (!connectionStore.isConnectionFile(filePath)) return;
+      try {
+        const profileId = connectionStore.profileIdForFile(filePath);
+        if (profileId && connectionManager.isConnected(profileId)) {
+          const transactions = connectionManager.transactionCount(profileId);
+          const executions = connectionManager.executionCount(profileId);
+          if (transactions > 0 || executions > 0) {
+            vscode.window.showWarningMessage(
+              'Simple DB: connection settings were saved on disk but cannot be applied while queries or transactions are active. Disconnect, then refresh Connections.',
+            );
+            return;
+          }
+          await connectionManager.disconnect(profileId);
+        }
+        const saved = await connectionStore.reloadFile(filePath);
+        connectionsProvider.refresh();
+        vscode.window.showInformationMessage(
+          `Simple DB: connection "${saved.name}" updated from JSON.`,
+        );
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Simple DB: could not load this connection JSON — ${error.message}`,
+        );
+      }
+    },
+  );
+  context.subscriptions.push(connectionFileSaveDisposable);
 
   const closeDisposable = vscode.workspace.onDidCloseTextDocument(async (document) => {
     const session = editorSessionManager.detach(document);

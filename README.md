@@ -7,6 +7,7 @@ The extension opens regular VS Code SQL documents. `F5` launches `src/extension.
 ## Main features
 
 - Create, edit, test, and delete multiple connections for each database engine.
+- Keep every connection in its own readable JSON file and edit all connection parameters in one place.
 - Store passwords in `SecretStorage`, never inside profiles or the repository.
 - Connect to several database engines simultaneously and disconnect them explicitly.
 - Explore databases, schemas, and engine-specific objects.
@@ -86,12 +87,59 @@ CSV export protects values that spreadsheet applications could interpret as form
 
 ## Connections and security
 
-- Connection profiles do not contain passwords.
-- Passwords are stored with the VS Code `SecretStorage` API.
+- **Create Connection** asks only for the database engine, a connection name, and a password for network databases. SQLite uses the native file picker.
+- Simple DB then creates one readable JSON file per connection and opens it in VS Code so host, port, database/service, username, TLS options, and timeouts can be edited together.
+- Saving a connection JSON with `Ctrl+S` reloads that connection automatically. Existing connections from Simple DB 0.1.1 are migrated to JSON files on first launch.
+- **Open Connection JSON** opens the selected profile, **Set Password** changes its secure password, and **Open Connections Folder** reveals all local connection files.
+- Connection JSON files never contain passwords. Passwords are stored with the VS Code `SecretStorage` API.
 - SSL/TLS, encryption, and certificate trust are explicit options where supported by the database engine.
 - `simpleDb.confirmDestructiveQueries` is enabled by default.
 - `simpleDb.warnUnsafeDml` is enabled by default.
 - Query history can contain literals written in SQL. It can be disabled with `simpleDb.history.enabled` or cleared from the **History** view.
+
+Example Oracle connection JSON:
+
+```json
+{
+  "id": "generated-by-simple-db",
+  "name": "Oracle Production",
+  "engine": "oracle",
+  "host": "192.168.1.20",
+  "port": 1521,
+  "serviceName": "ORCLPDB1",
+  "connectString": "",
+  "user": "report_user",
+  "connectTimeoutMs": 15000,
+  "queryTimeoutMs": 300000
+}
+```
+
+Example SQLite connection JSON:
+
+```json
+{
+  "id": "generated-by-simple-db",
+  "name": "Local SQLite",
+  "engine": "sqlite",
+  "filePath": "C:\\data\\sample.db",
+  "readOnly": false,
+  "connectTimeoutMs": 15000,
+  "queryTimeoutMs": 300000
+}
+```
+
+The `id` is generated and managed by Simple DB. Do not change it. Use **Simple DB: Set Password** instead of adding a `password` field to a JSON file.
+
+### Editor context menu
+
+Right-clicking inside an editor now shows a native **Simple DB** submenu with the main actions:
+
+- Create Connection
+- New Query
+- Execute Selection or Current Statement
+- Execute Entire Document
+- Change Editor Connection
+- Show History
 
 ### SQLite note
 

@@ -61,7 +61,7 @@
     "commands": [
       {
         "command": "simpleDb.addConnection",
-        "title": "Add Connection",
+        "title": "Create Connection",
         "category": "Simple DB",
         "icon": "$(add)"
       },
@@ -91,9 +91,21 @@
       },
       {
         "command": "simpleDb.editConnection",
-        "title": "Edit Connection",
+        "title": "Open Connection JSON",
         "category": "Simple DB",
         "icon": "$(edit)"
+      },
+      {
+        "command": "simpleDb.setPassword",
+        "title": "Set Password",
+        "category": "Simple DB",
+        "icon": "$(key)"
+      },
+      {
+        "command": "simpleDb.openConnectionsFolder",
+        "title": "Open Connections Folder",
+        "category": "Simple DB",
+        "icon": "$(folder-opened)"
       },
       {
         "command": "simpleDb.deleteConnection",
@@ -219,6 +231,12 @@
         "icon": "$(copy)"
       }
     ],
+    "submenus": [
+      {
+        "id": "simpleDb.editorContextMenu",
+        "label": "Simple DB"
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -253,6 +271,11 @@
           "command": "simpleDb.refreshConnections",
           "when": "view == simpleDb.connections",
           "group": "navigation@2"
+        },
+        {
+          "command": "simpleDb.openConnectionsFolder",
+          "when": "view == simpleDb.connections",
+          "group": "navigation@3"
         },
         {
           "command": "simpleDb.clearHistory",
@@ -297,9 +320,14 @@
           "group": "connection@2"
         },
         {
-          "command": "simpleDb.deleteConnection",
+          "command": "simpleDb.setPassword",
           "when": "view == simpleDb.connections && viewItem =~ /simpleDb.connection/",
           "group": "connection@3"
+        },
+        {
+          "command": "simpleDb.deleteConnection",
+          "when": "view == simpleDb.connections && viewItem =~ /simpleDb.connection/",
+          "group": "connection@4"
         },
         {
           "command": "simpleDb.selectTable",
@@ -371,19 +399,37 @@
       ],
       "editor/context": [
         {
-          "command": "simpleDb.executeCurrent",
-          "when": "editorLangId == sql",
+          "submenu": "simpleDb.editorContextMenu",
           "group": "simpleDb@1"
+        }
+      ],
+      "simpleDb.editorContextMenu": [
+        {
+          "command": "simpleDb.addConnection",
+          "group": "1_connection@1"
         },
         {
-          "command": "simpleDb.executeSelection",
-          "when": "editorLangId == sql && editorHasSelection",
-          "group": "simpleDb@2"
+          "command": "simpleDb.newQuery",
+          "group": "1_connection@2"
+        },
+        {
+          "command": "simpleDb.executeCurrent",
+          "when": "editorLangId == sql",
+          "group": "2_query@1"
+        },
+        {
+          "command": "simpleDb.executeDocument",
+          "when": "editorLangId == sql",
+          "group": "2_query@2"
         },
         {
           "command": "simpleDb.changeEditorConnection",
           "when": "editorLangId == sql",
-          "group": "simpleDb@3"
+          "group": "2_query@3"
+        },
+        {
+          "command": "simpleDb.showHistory",
+          "group": "3_history@1"
         }
       ]
     },
