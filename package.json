@@ -49,7 +49,9 @@
     "mssql",
     "t-sql",
     "ddl",
-    "schema explorer"
+    "schema explorer",
+    "suzdalenko", 
+    "suzdalenko-dev"
   ],
   "activationEvents": [
     "onView:simpleDb.connections",
