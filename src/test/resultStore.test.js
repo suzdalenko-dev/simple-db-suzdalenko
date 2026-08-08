@@ -55,6 +55,6 @@ describe('ResultStore', () => {
     await store.finishSet('exec-2', 0);
     const metadata = await store.finalizeExecution('exec-2');
     expect(metadata.sets[0].pages).toBe(2);
-    expect((await store.getPage('exec-2', 0, 0))[0][0]).toContain('omitidos');
+    expect((await store.getPage('exec-2', 0, 0))[0][0]).toContain('characters omitted');
   });
 });

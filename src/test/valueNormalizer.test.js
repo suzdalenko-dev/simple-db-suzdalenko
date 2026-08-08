@@ -21,7 +21,7 @@ describe('valueNormalizer', () => {
       5,
     );
     expect(rows).toHaveLength(2);
-    expect(rows[0][0]).toContain('omitidos');
+    expect(rows[0][0]).toContain('characters omitted');
   });
 
   it('generates a safe display value for binary data', () => {

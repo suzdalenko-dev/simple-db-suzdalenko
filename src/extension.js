@@ -19,7 +19,7 @@ const { ResultStore } = require('./storage/resultStore');
 const { promptConnection, promptPassword } = require('./ui/connectionForm');
 const { ConnectionsTreeProvider } = require('./views/connectionsTreeProvider');
 const { HistoryTreeProvider } = require('./views/historyTreeProvider');
-const { ResultPanel } = require('./views/resultPanel');
+const { RESULT_VIEW_ID, ResultPanel } = require('./views/resultPanel');
 const { getDatabaseEngine } = require('./databaseEngines');
 
 let runtime = null;
@@ -150,6 +150,11 @@ async function activate(context) {
   await resultStore.initialize();
   const exportService = new ExportService(resultStore, exportConfiguration);
   const resultPanel = new ResultPanel(resultStore, exportService);
+  const resultViewRegistration = vscode.window.registerWebviewViewProvider(
+    RESULT_VIEW_ID,
+    resultPanel,
+    { webviewOptions: { retainContextWhenHidden: true } },
+  );
   const queryRunner = new QueryRunner({
     connectionStore,
     connectionManager,
@@ -174,6 +179,7 @@ async function activate(context) {
   context.subscriptions.push(
     connectionsView,
     historyView,
+    resultViewRegistration,
     connectionsProvider,
     historyProvider,
     editorSessionManager,

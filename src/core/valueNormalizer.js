@@ -6,7 +6,7 @@ function truncateText(value, maxCharacters) {
   }
 
   const removed = value.length - maxCharacters;
-  return `${value.slice(0, maxCharacters)}… [${removed} caracteres omitidos]`;
+  return `${value.slice(0, maxCharacters)}… [${removed} characters omitted]`;
 }
 
 function normalizeValue(value, maxCharacters = 10000) {

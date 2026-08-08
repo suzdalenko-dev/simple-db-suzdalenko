@@ -2,7 +2,7 @@
   "name": "simple-db-suzdalenko",
   "displayName": "Simple DB - SQL Client for SQLite, MySQL, PostgreSQL, SQL Server & Oracle",
   "description": "SQL client and database editor for SQLite, MySQL, PostgreSQL, SQL Server (MSSQL) and Oracle. Browse database objects, run queries, manage DDL and export results.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "suzdalenko-dev",
   "license": "MIT",
   "icon": "resources/simple-db-marketplace.png",
@@ -56,6 +56,7 @@
   "activationEvents": [
     "onView:simpleDb.connections",
     "onView:simpleDb.history",
+    "onView:simpleDb.results",
     "onLanguage:sql"
   ],
   "main": "./src/extension.js",
@@ -246,6 +247,13 @@
           "title": "Simple DB",
           "icon": "resources/simple-db.svg"
         }
+      ],
+      "panel": [
+        {
+          "id": "simpleDbResults",
+          "title": "Simple DB",
+          "icon": "resources/simple-db.svg"
+        }
       ]
     },
     "views": {
@@ -259,6 +267,14 @@
           "id": "simpleDb.history",
           "name": "History",
           "type": "tree"
+        }
+      ],
+      "simpleDbResults": [
+        {
+          "id": "simpleDb.results",
+          "name": "Results",
+          "type": "webview",
+          "contextualTitle": "Simple DB Results"
         }
       ]
     },
