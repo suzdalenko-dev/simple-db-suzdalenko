@@ -235,7 +235,7 @@ class SqlNavigationProvider {
     const pick = await vscode.window.showQuickPick(items, {
       title,
       placeHolder: 'Multiple database objects or overloads match this reference',
-      ignoreFocusOut: true,
+      ignoreFocusOut: false,
     });
     if (pick) await this._openLocation(pick.location);
   }
