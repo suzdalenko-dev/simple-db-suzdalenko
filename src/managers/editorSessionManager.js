@@ -139,6 +139,42 @@ class EditorSessionManager {
     return { document, session };
   }
 
+  async _pickConnection(session, document) {
+    while (true) {
+      const profiles = this.connectionStore.list();
+      const items = profiles.map((profile) => ({
+        label:
+          (profile.id === session?.profileId ? '$(check) ' : '$(database) ') +
+          profile.name,
+        description: getDatabaseEngine(profile.engine)?.displayName || profile.engine,
+        detail: databaseForProfile(profile),
+        profile,
+      }));
+      items.push({
+        label: '$(add) Create New Connection...',
+        description: 'Simple DB',
+        createConnection: true,
+      });
+      const pick = await vscode.window.showQuickPick(items, {
+        title: 'Simple DB — Select Connection for SQL File',
+        placeHolder: session
+          ? 'Choose a different connection for this SQL file'
+          : 'Choose the connection this SQL file should use',
+        ignoreFocusOut: true,
+      });
+      if (!pick) return null;
+      if (!pick.createConnection) return pick.profile;
+
+      const created = await vscode.commands.executeCommand('simpleDb.addConnection');
+      if (created) {
+        if (document) {
+          await vscode.window.showTextDocument(document, { preview: false });
+        }
+        return created;
+      }
+    }
+  }
+
   async ensureSession(document) {
     if (!this._isSqlDocument(document)) {
       throw new Error('Open a regular SQL file before selecting a database connection.');
@@ -146,25 +182,9 @@ class EditorSessionManager {
     const existing = this.get(document);
     if (existing) return existing;
 
-    const profiles = this.connectionStore.list();
-    if (!profiles.length) {
-      throw new Error('Create a connection in Simple DB first.');
-    }
-    const pick = await vscode.window.showQuickPick(
-      profiles.map((profile) => ({
-        label: `$(database) ${profile.name}`,
-        description: getDatabaseEngine(profile.engine)?.displayName || profile.engine,
-        detail: databaseForProfile(profile),
-        profile,
-      })),
-      {
-        title: 'Simple DB — Select Connection for SQL File',
-        placeHolder: 'This SQL file will keep using the selected connection',
-        ignoreFocusOut: true,
-      },
-    );
-    if (!pick) return null;
-    return this.createSession(document, pick.profile);
+    const profile = await this._pickConnection(undefined, document);
+    if (!profile) return null;
+    return this.createSession(document, profile);
   }
 
   async ensureActiveSession() {
@@ -184,33 +204,17 @@ class EditorSessionManager {
       throw new Error('Run COMMIT or ROLLBACK before changing the editor connection.');
     }
 
-    const profiles = this.connectionStore.list();
-    if (!profiles.length) throw new Error('Create a connection in Simple DB first.');
-    const pick = await vscode.window.showQuickPick(
-      profiles.map((profile) => ({
-        label: `${profile.id === session?.profileId ? '$(check) ' : '$(database) '}${profile.name}`,
-        description: getDatabaseEngine(profile.engine)?.displayName || profile.engine,
-        detail: databaseForProfile(profile),
-        profile,
-      })),
-      {
-        title: 'Simple DB — Select Connection for SQL File',
-        placeHolder: session
-          ? 'Choose a different connection for this SQL file'
-          : 'Choose the connection this SQL file should use',
-        ignoreFocusOut: true,
-      },
-    );
-    if (!pick) return;
+    const profile = await this._pickConnection(session, editor.document);
+    if (!profile) return;
 
     if (session) {
-      session.profileId = pick.profile.id;
-      session.database = databaseForProfile(pick.profile);
-      session.schema = schemaForProfile(pick.profile, session.database);
+      session.profileId = profile.id;
+      session.database = databaseForProfile(profile);
+      session.schema = schemaForProfile(profile, session.database);
       session.transactionNeedsRollback = false;
       await this._persist(editor.document, session);
     } else {
-      await this.createSession(editor.document, pick.profile);
+      await this.createSession(editor.document, profile);
     }
     this.refreshStatusBar();
   }

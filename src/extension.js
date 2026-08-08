@@ -206,6 +206,7 @@ async function activate(context) {
     vscode.window.showInformationMessage(
       `Simple DB: "${saved.name}" created. Edit the JSON, press Ctrl+S, then test or connect.`,
     );
+    return saved;
   });
 
   registerCommand(context, 'simpleDb.refreshConnections', async () => {
@@ -339,6 +340,13 @@ async function activate(context) {
 
   registerCommand(context, 'simpleDb.changeEditorConnection', () =>
     editorSessionManager.changeActiveConnection(),
+  );
+
+  registerCommand(context, 'simpleDb.goToDefinition', () =>
+    sqlNavigationProvider.openFromActiveEditor('definition'),
+  );
+  registerCommand(context, 'simpleDb.goToDeclaration', () =>
+    sqlNavigationProvider.openFromActiveEditor('declaration'),
   );
 
   registerCommand(context, 'simpleDb.executeCurrent', () => queryRunner.run('current'));

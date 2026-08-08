@@ -357,7 +357,9 @@ class PostgreSqlAdapter extends BaseAdapter {
       database,
       `SELECT p.proname AS name,
               CASE p.prokind WHEN 'p' THEN 'PROCEDURE' ELSE 'FUNCTION' END AS type,
-              pg_get_function_identity_arguments(p.oid) AS signature
+              pg_get_function_identity_arguments(p.oid) AS signature,
+              p.pronargs AS "argumentCount",
+              p.pronargdefaults AS "defaultArgumentCount"
          FROM pg_proc p
          JOIN pg_namespace n ON n.oid = p.pronamespace
         WHERE n.nspname = $1 AND p.prokind IN ('f', 'p')
