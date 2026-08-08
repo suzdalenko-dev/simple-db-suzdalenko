@@ -1,6 +1,6 @@
 # Simple DB
 
-Simple DB `0.1.2` is a Visual Studio Code extension written entirely in JavaScript for working with **SQLite, PostgreSQL, MySQL, SQL Server, and Oracle** through a single interface.
+Simple DB `0.1.3` is a Visual Studio Code extension written entirely in JavaScript for working with **SQLite, PostgreSQL, MySQL, SQL Server, and Oracle** through a single interface.
 
 The extension opens regular VS Code SQL documents. `F5` launches `src/extension.js` directly: there is no TypeScript, `tsconfig.json`, `dist` folder, or compilation step.
 
@@ -11,7 +11,7 @@ The extension opens regular VS Code SQL documents. `F5` launches `src/extension.
 - Store passwords in `SecretStorage`, never inside profiles or the repository.
 - Connect to several database engines simultaneously and disconnect them explicitly.
 - Explore databases, schemas, and engine-specific objects.
-- Open SQL editors linked to a connection, database, and schema.
+- Attach any regular `.sql` file to a connection from the editor toolbar/status bar. Saved files remember that connection on the same VS Code installation until you change it.
 - Execute the selection, the statement at the cursor, or the entire document.
 - Execute arbitrary SQL: `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `CREATE`, `ALTER`, `DROP`, `TRUNCATE`, and any other syntax accepted by the server.
 - Generate `CREATE`, `ALTER`, and `DROP` scripts from the explorer and inspect object definitions/DDL.
@@ -20,15 +20,16 @@ The extension opens regular VS Code SQL documents. `F5` launches `src/extension.
 - View results below the SQL editor in a resizable SQL Developer-style grid with row numbers, multiple result sets, types, `NULL`, affected rows, duration, and cell/row/selection copy actions.
 - Preserve 64-bit integers and high-precision `NUMBER` values exactly before displaying or exporting them.
 - Export already-retrieved results to CSV, JSON, or XLSX without executing the SQL again.
-- Use configurable local query history with reopen, copy, and rerun actions.
+- Use native **Go to Definition** / **Go to Declaration** navigation for database objects whose source or DDL is exposed by the connected engine, including routines and Oracle packages.
 
 ## Quick start
 
 1. Open **Simple DB** in the Activity Bar and choose **Create Connection**.
 2. Select the database engine and enter a connection name. SQLite uses the native file picker; network databases create a JSON profile with the correct default parameters.
 3. Edit the generated JSON if needed, press `Ctrl+S`, then use **Test Connection** or **Connect** from the connection menu. Passwords stay outside JSON in VS Code `SecretStorage`.
-4. Choose **New Query**, write SQL, and press `Ctrl+Enter` to execute the selection or the statement at the cursor. Use `Ctrl+Shift+Enter` to execute the entire document.
-5. Results appear automatically in the resizable **Simple DB — Results** panel below the SQL editor. The same core commands are also available from the editor's **Simple DB** context submenu.
+4. Open or create any `.sql` file. Click the database icon or **Simple DB: Select Connection** in the status bar and choose the connection this file should use. If you press `Ctrl+Enter` before choosing, Simple DB asks you once and attaches the selected connection automatically.
+5. Press `Ctrl+Enter` (**Execute Query**) to run the selection or statement at the cursor. Use `Ctrl+Shift+Enter` (**Execute Script**) for the entire document. Saved SQL files keep their selected connection when closed and reopened.
+6. Results appear automatically in the resizable **Simple DB — Results** panel below the SQL editor. `F12` / **Go to Definition** and **Go to Declaration** use the same attached connection to resolve database objects.
 
 ## Five database engines
 
@@ -40,7 +41,7 @@ The extension opens regular VS Code SQL documents. `F5` launches `src/extension.
 | SQL Server | `mssql` | databases, schemas, tables, views, procedures/functions, indexes, triggers, sequences, types, synonyms, `GO` |
 | Oracle | `oracledb` Thin | schemas, tables, views/materialized views, procedures/functions, packages, indexes, triggers, sequences, types, synonyms, PL/SQL |
 
-Oracle uses the default `node-oracledb` Thin mode, so normal connections do not require Oracle Client to be installed. Simple DB `0.1.2` uses SQL authentication with a username and password for SQL Server.
+Oracle uses the default `node-oracledb` Thin mode, so normal connections do not require Oracle Client to be installed. Simple DB `0.1.3` uses SQL authentication with a username and password for SQL Server.
 
 ## No imposed row limit by default
 
@@ -105,7 +106,6 @@ CSV export protects values that spreadsheet applications could interpret as form
 - SSL/TLS, encryption, and certificate trust are explicit options where supported by the database engine.
 - `simpleDb.confirmDestructiveQueries` is enabled by default.
 - `simpleDb.warnUnsafeDml` is enabled by default.
-- Query history can contain literals written in SQL. It can be disabled with `simpleDb.history.enabled` or cleared from the **History** view.
 
 Example Oracle connection JSON:
 
@@ -146,10 +146,11 @@ Right-clicking inside an editor now shows a native **Simple DB** submenu with th
 
 - Create Connection
 - New Query
-- Execute Selection or Current Statement
-- Execute Entire Document
-- Change Editor Connection
-- Show History
+- Select Connection for SQL File
+- Execute Query
+- Execute Script
+
+VS Code's native **Go to Definition** and **Go to Declaration** actions are available in SQL editors. Simple DB resolves them against the connection attached to that file and opens the database-provided source/DDL in a read-only virtual SQL document.
 
 ### SQLite note
 
@@ -162,8 +163,6 @@ SQLite runs in a dedicated WebAssembly Worker so long-running queries do not blo
 | `simpleDb.maxRows` | `0` | Optional limit per result set; `0` = unlimited |
 | `simpleDb.resultPageSize` | `500` | Rows per temporary storage/display page |
 | `simpleDb.maxCellCharacters` | `10000` | Maximum characters retained per cell in results |
-| `simpleDb.history.enabled` | `true` | Store local query history |
-| `simpleDb.history.maxEntries` | `500` | Maximum history entries |
 | `simpleDb.confirmDestructiveQueries` | `true` | Confirm `DROP`/`TRUNCATE` |
 | `simpleDb.warnUnsafeDml` | `true` | Warn about `UPDATE`/`DELETE` without `WHERE` |
 | `simpleDb.csvDelimiter` | `;` | CSV export delimiter |
@@ -208,7 +207,7 @@ src/
   managers/      # connections and editor sessions
   services/      # execution and export
   sql/           # dialect-aware splitter, safety rules, and DDL
-  storage/       # profiles, history, and paged results
+  storage/       # connection profiles, editor bindings, and paged results
   test/          # JavaScript tests
   ui/            # connection form
   views/         # trees and lower result grid
