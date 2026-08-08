@@ -2,6 +2,26 @@
 
 All notable changes to Simple DB are documented in this file.
 
+## 0.1.4 - 2026-08-08
+
+### Added
+
+- A focused **Simple DB** SQL-editor submenu with **Select / Change Connection...**, **Run Statement**, **Run Script**, **Go to Definition**, and **Go to Declaration**.
+- **Create New Connection...** inside the SQL-file connection picker, including the first-`Ctrl+Enter` flow when no profiles exist yet.
+- Alias/column navigation such as `c.nombre -> clientes.nombre`.
+- Overload-aware navigation. PostgreSQL routine metadata now includes argument/default counts, and Oracle package member navigation distinguishes compatible package members from the call arguments when possible.
+- Synonym following for resolvable Oracle and SQL Server targets, with private Oracle synonyms preferred over public synonyms.
+- Chained navigation from read-only database source/DDL documents while preserving the originating connection, database, and schema.
+- Explicit source/metadata permission messages when an object exists but its source/DDL cannot be read.
+- A real SQLite navigation integration test and an opt-in `npm run test:live-navigation` smoke test for real PostgreSQL, MySQL, SQL Server, and Oracle profiles.
+
+### Changed
+
+- Oracle package **Go to Declaration** targets the package specification; **Go to Definition** targets the matching package-body implementation.
+- Ambiguous overloads return all valid navigation locations instead of silently choosing the first catalog row.
+- `Ctrl+Enter` is **Run Statement**, `F5` is **Run Script**, and `F12` invokes Simple DB definition navigation in SQL editors.
+- Context-only administrative/object commands are hidden from the Command Palette so the primary SQL workflow is easier to discover.
+
 ## 0.1.3 - 2026-08-08
 
 ### Added

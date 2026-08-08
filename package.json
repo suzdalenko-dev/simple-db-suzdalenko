@@ -2,7 +2,7 @@
   "name": "simple-db-suzdalenko",
   "displayName": "Simple DB - SQL Client for SQLite, MySQL, PostgreSQL, SQL Server & Oracle",
   "description": "SQL client and database editor for SQLite, MySQL, PostgreSQL, SQL Server (MSSQL) and Oracle. Browse database objects, run queries, manage DDL and export results.",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publisher": "suzdalenko-dev",
   "license": "MIT",
   "icon": "resources/simple-db-marketplace.png",
@@ -123,13 +123,13 @@
       },
       {
         "command": "simpleDb.changeEditorConnection",
-        "title": "Select Connection for SQL File",
+        "title": "Select / Change Connection...",
         "category": "Simple DB",
         "icon": "$(database)"
       },
       {
         "command": "simpleDb.executeCurrent",
-        "title": "Execute Query",
+        "title": "Run Statement",
         "category": "Simple DB",
         "icon": "$(play)"
       },
@@ -140,9 +140,19 @@
       },
       {
         "command": "simpleDb.executeDocument",
-        "title": "Execute Script",
+        "title": "Run Script",
         "category": "Simple DB",
         "icon": "$(run-all)"
+      },
+      {
+        "command": "simpleDb.goToDefinition",
+        "title": "Go to Definition",
+        "category": "Simple DB"
+      },
+      {
+        "command": "simpleDb.goToDeclaration",
+        "title": "Go to Declaration",
+        "category": "Simple DB"
       },
       {
         "command": "simpleDb.cancelQuery",
@@ -242,6 +252,80 @@
       ]
     },
     "menus": {
+      "commandPalette": [
+        {
+          "command": "simpleDb.refreshConnections",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.connect",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.disconnect",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.testConnection",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.editConnection",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.setPassword",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.openConnectionsFolder",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.deleteConnection",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.executeSelection",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.beginTransaction",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.commit",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.rollback",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.selectTable",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.showDefinition",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.createObject",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.alterObject",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.dropObjectScript",
+          "when": "false"
+        },
+        {
+          "command": "simpleDb.copyQualifiedName",
+          "when": "false"
+        }
+      ],
       "view/title": [
         {
           "command": "simpleDb.addConnection",
@@ -361,33 +445,35 @@
       "editor/context": [
         {
           "submenu": "simpleDb.editorContextMenu",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "editorLangId == sql",
           "group": "simpleDb@1"
         }
       ],
       "simpleDb.editorContextMenu": [
         {
-          "command": "simpleDb.addConnection",
+          "command": "simpleDb.changeEditorConnection",
+          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
           "group": "1_connection@1"
         },
         {
-          "command": "simpleDb.newQuery",
-          "group": "1_connection@2"
-        },
-        {
-          "command": "simpleDb.changeEditorConnection",
-          "when": "editorLangId == sql",
-          "group": "2_query@1"
-        },
-        {
           "command": "simpleDb.executeCurrent",
-          "when": "editorLangId == sql",
-          "group": "2_query@2"
+          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "group": "2_run@1"
         },
         {
           "command": "simpleDb.executeDocument",
+          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "group": "2_run@2"
+        },
+        {
+          "command": "simpleDb.goToDefinition",
           "when": "editorLangId == sql",
-          "group": "2_query@3"
+          "group": "3_navigation@1"
+        },
+        {
+          "command": "simpleDb.goToDeclaration",
+          "when": "editorLangId == sql",
+          "group": "3_navigation@2"
         }
       ]
     },
@@ -400,9 +486,14 @@
       },
       {
         "command": "simpleDb.executeDocument",
-        "key": "ctrl+shift+enter",
-        "mac": "cmd+shift+enter",
+        "key": "f5",
+        "mac": "f5",
         "when": "editorTextFocus && editorLangId == sql && resourceScheme != simple-db-definition"
+      },
+      {
+        "command": "simpleDb.goToDefinition",
+        "key": "f12",
+        "when": "editorTextFocus && editorLangId == sql"
       }
     ],
     "configuration": {
@@ -456,6 +547,7 @@
     "vscode:prepublish": "npm run check",
     "lint": "eslint src",
     "test": "vitest run --globals",
+    "test:live-navigation": "node src/test/liveNavigation.live.js",
     "check": "npm run lint && npm run test",
     "package": "npm run check && vsce package",
     "package:win32": "npm run check && vsce package --target win32-x64",

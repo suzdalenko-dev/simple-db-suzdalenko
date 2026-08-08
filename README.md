@@ -1,8 +1,8 @@
 # Simple DB
 
-Simple DB `0.1.3` is a Visual Studio Code extension written entirely in JavaScript for working with **SQLite, PostgreSQL, MySQL, SQL Server, and Oracle** through a single interface.
+Simple DB `0.1.4` is a Visual Studio Code extension written entirely in JavaScript for working with **SQLite, PostgreSQL, MySQL, SQL Server, and Oracle** through a single interface.
 
-The extension opens regular VS Code SQL documents. `F5` launches `src/extension.js` directly: there is no TypeScript, `tsconfig.json`, `dist` folder, or compilation step.
+The extension opens regular VS Code SQL documents and loads `src/extension.js` directly: there is no TypeScript, `tsconfig.json`, `dist` folder, or compilation step.
 
 ## Main features
 
@@ -20,16 +20,17 @@ The extension opens regular VS Code SQL documents. `F5` launches `src/extension.
 - View results below the SQL editor in a resizable SQL Developer-style grid with row numbers, multiple result sets, types, `NULL`, affected rows, duration, and cell/row/selection copy actions.
 - Preserve 64-bit integers and high-precision `NUMBER` values exactly before displaying or exporting them.
 - Export already-retrieved results to CSV, JSON, or XLSX without executing the SQL again.
-- Use native **Go to Definition** / **Go to Declaration** navigation for database objects whose source or DDL is exposed by the connected engine, including routines and Oracle packages.
+- Use **Go to Definition** / **Go to Declaration** for tables, views, routines, packages, triggers, types, sequences, indexes, synonyms, and other source/DDL-backed objects supported by each engine.
+- Navigate through table aliases/columns, PostgreSQL and Oracle overloads, Oracle package specifications/bodies, and synonym targets without losing the SQL file's connection context.
 
 ## Quick start
 
 1. Open **Simple DB** in the Activity Bar and choose **Create Connection**.
 2. Select the database engine and enter a connection name. SQLite uses the native file picker; network databases create a JSON profile with the correct default parameters.
 3. Edit the generated JSON if needed, press `Ctrl+S`, then use **Test Connection** or **Connect** from the connection menu. Passwords stay outside JSON in VS Code `SecretStorage`.
-4. Open or create any `.sql` file. Click the database icon or **Simple DB: Select Connection** in the status bar and choose the connection this file should use. If you press `Ctrl+Enter` before choosing, Simple DB asks you once and attaches the selected connection automatically.
-5. Press `Ctrl+Enter` (**Execute Query**) to run the selection or statement at the cursor. Use `Ctrl+Shift+Enter` (**Execute Script**) for the entire document. Saved SQL files keep their selected connection when closed and reopened.
-6. Results appear automatically in the resizable **Simple DB — Results** panel below the SQL editor. `F12` / **Go to Definition** and **Go to Declaration** use the same attached connection to resolve database objects.
+4. Open or create any `.sql` file. Click the database icon or **Simple DB: Select Connection** in the status bar and choose the connection this file should use. The picker also offers **Create New Connection...**. If you press `Ctrl+Enter` before choosing, Simple DB opens the same picker and then attaches the selected connection automatically.
+5. Press `Ctrl+Enter` (**Run Statement**) to run the selection or statement at the cursor. Press `F5` (**Run Script**) for the entire document. Saved SQL files keep their selected connection when closed and reopened.
+6. Results appear automatically in the resizable **Simple DB — Results** panel below the SQL editor. `F12` / **Go to Definition** opens the implementation/source; **Go to Declaration** opens the declaration when the engine exposes a separate one.
 
 ## Five database engines
 
@@ -41,7 +42,7 @@ The extension opens regular VS Code SQL documents. `F5` launches `src/extension.
 | SQL Server | `mssql` | databases, schemas, tables, views, procedures/functions, indexes, triggers, sequences, types, synonyms, `GO` |
 | Oracle | `oracledb` Thin | schemas, tables, views/materialized views, procedures/functions, packages, indexes, triggers, sequences, types, synonyms, PL/SQL |
 
-Oracle uses the default `node-oracledb` Thin mode, so normal connections do not require Oracle Client to be installed. Simple DB `0.1.3` uses SQL authentication with a username and password for SQL Server.
+Oracle uses the default `node-oracledb` Thin mode, so normal connections do not require Oracle Client to be installed. Simple DB `0.1.4` uses SQL authentication with a username and password for SQL Server.
 
 ## No imposed row limit by default
 
@@ -144,13 +145,15 @@ The `id` is generated and managed by Simple DB. Do not change it. Use **Simple D
 
 Right-clicking inside an editor now shows a native **Simple DB** submenu with the main actions:
 
-- Create Connection
-- New Query
-- Select Connection for SQL File
-- Execute Query
-- Execute Script
+- Select / Change Connection...
+- Run Statement (`Ctrl+Enter`)
+- Run Script (`F5`)
+- Go to Definition (`F12`)
+- Go to Declaration
 
-VS Code's native **Go to Definition** and **Go to Declaration** actions are available in SQL editors. Simple DB resolves them against the connection attached to that file and opens the database-provided source/DDL in a read-only virtual SQL document.
+The lower-right status bar shows the profile currently attached to the SQL file. **Select / Change Connection...** marks that profile in the picker and lets the file switch to another one. If there are no profiles yet, **Create New Connection...** is available directly in the picker.
+
+Navigation resolves against the connection attached to the SQL file and opens database-provided source/DDL in a read-only virtual SQL document. Oracle package **Go to Declaration** targets the package specification while **Go to Definition** targets the package body. When an overload can be identified from the call arguments, Simple DB selects it; when several overloads remain valid, it presents all valid locations instead of guessing. `alias.column` references are resolved back to their underlying table/view column, Oracle and SQL Server synonyms are followed to the target object when it is local/resolvable, and navigation can continue from one opened database definition into another. If catalog/source permissions are insufficient, Simple DB reports that explicitly.
 
 ### SQLite note
 
@@ -191,12 +194,15 @@ Project commands:
 |---|---|
 | `npm run lint` | Run ESLint on JavaScript sources |
 | `npm test` | Run JavaScript Vitest tests |
+| `npm run test:live-navigation` | Run read-only metadata/source smoke checks against real server profiles plus a temporary real SQLite database |
 | `npm run check` | Run lint + tests |
 | `npm run package` | Validate and build the VSIX |
 | `npm run package:win32` | Build a `win32-x64` VSIX |
 | `npm run package:linux` | Build a `linux-x64` VSIX |
 
-The test suite covers parsing, safety rules, DDL, storage, mocked `SecretStorage`, and a real SQLite integration. External PostgreSQL, MySQL, SQL Server, and Oracle servers require their own credentials/infrastructure for integration testing against live instances.
+The normal test suite covers parsing, safety rules, DDL, storage, mocked `SecretStorage`, advanced SQL navigation, and a real SQLite integration. External PostgreSQL, MySQL, SQL Server, and Oracle servers require their own credentials/infrastructure for live verification.
+
+`npm run test:live-navigation` intentionally does not use mocks. Before running all five engines, define JSON profiles in `SIMPLE_DB_LIVE_POSTGRESQL_PROFILE`, `SIMPLE_DB_LIVE_MYSQL_PROFILE`, `SIMPLE_DB_LIVE_SQLSERVER_PROFILE`, and `SIMPLE_DB_LIVE_ORACLE_PROFILE`, with the matching passwords in `SIMPLE_DB_LIVE_<ENGINE>_PASSWORD`. An optional `navigationTestSchema` property selects the schema to inspect. `SIMPLE_DB_LIVE_ENGINES=sqlite` can be used to run only the self-contained SQLite live check. The live check only reads catalogs/source on the server engines; its SQLite database is created in a temporary directory.
 
 ## Project structure
 

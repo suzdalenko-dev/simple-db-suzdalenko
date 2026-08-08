@@ -21,7 +21,7 @@ describe('lower Results view', () => {
     const panel = packageJson.contributes.viewsContainers.panel;
     const views = packageJson.contributes.views.simpleDbResults;
 
-    expect(packageJson.version).toBe('0.1.3');
+    expect(packageJson.version).toBe('0.1.4');
     expect(panel).toContainEqual(
       expect.objectContaining({ id: 'simpleDbResults', title: 'Simple DB' }),
     );

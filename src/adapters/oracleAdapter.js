@@ -371,9 +371,11 @@ class OracleAdapter extends BaseAdapter {
   async listSynonyms(_database, schema) {
     return this._query(
       `SELECT synonym_name AS "name",
-              table_owner || '.' || table_name AS "target"
+              table_owner || '.' || table_name AS "target",
+              owner AS "owner",
+              db_link AS "dbLink"
          FROM all_synonyms
-        WHERE owner = :owner
+        WHERE owner IN (:owner, 'PUBLIC')
         ORDER BY synonym_name`,
       { owner: schema },
     );

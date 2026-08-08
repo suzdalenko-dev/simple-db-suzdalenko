@@ -4,6 +4,7 @@ const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
 const { SqliteAdapter } = require('../adapters/sqliteAdapter');
+const { extractSqlReference, resolveSqlTargets } = require('../services/sqlNavigation');
 
 function collectingSink() {
   const sets = [];
@@ -176,5 +177,48 @@ END;`);
     expect((await adapter.listTriggers('main', 'main')).map((row) => row.name)).toContain('trg_items');
     expect(await adapter.getObjectDefinition('main', 'main', 'items', 'table')).toMatch(/^CREATE TABLE/i);
     expect(await adapter.getObjectDefinition('main', 'main', 'trg_items', 'trigger')).toMatch(/^CREATE TRIGGER/i);
+  });
+
+  it('resolves Go to Definition targets through the real SQLite catalog', async () => {
+    await execute('CREATE TABLE clientes (id INTEGER PRIMARY KEY, nombre TEXT NOT NULL);');
+    const manager = {
+      listObjectGroup: async (_profileId, database, schema, group) => {
+        const methods = {
+          tables: 'listTables',
+          views: 'listViews',
+          indexes: 'listIndexes',
+          triggers: 'listTriggers',
+        };
+        const method = methods[group];
+        return method ? adapter[method](database, schema) : [];
+      },
+      listColumns: async (_profileId, database, schema, name) =>
+        adapter.listColumns(database, schema, name),
+      getObjectDefinition: async (
+        _profileId,
+        database,
+        schema,
+        name,
+        type,
+        metadata,
+      ) => adapter.getObjectDefinition(database, schema, name, type, metadata),
+    };
+    const sql = 'SELECT c.nombre FROM clientes c;';
+    const reference = extractSqlReference(sql, sql.indexOf('nombre') + 2);
+    const targets = await resolveSqlTargets(
+      manager,
+      { id: 'sqlite-test', engine: 'sqlite', filePath: adapter.profile.filePath },
+      { database: 'main', schema: 'main' },
+      reference,
+    );
+
+    expect(targets).toHaveLength(1);
+    expect(targets[0]).toMatchObject({
+      schema: 'main',
+      name: 'clientes',
+      columnName: 'nombre',
+      objectType: 'table',
+    });
+    expect(targets[0].definition).toMatch(/^CREATE TABLE clientes/i);
   });
 });
