@@ -61,6 +61,23 @@ async function pickProfile(connectionStore, title = 'Simple DB — Select Connec
   return pick && !pick.cancel ? pick.profile : null;
 }
 
+async function profileForCommand(connectionStore, editorSessionManager, node) {
+  const nodeProfile = profileForNode(connectionStore, node);
+  if (nodeProfile) return nodeProfile;
+
+  const editor = vscode.window.activeTextEditor;
+  if (
+    editor?.document?.languageId === 'sql' &&
+    editor.document.uri.scheme !== DEFINITION_SCHEME
+  ) {
+    const session = await editorSessionManager.ensureSession(editor.document);
+    if (!session) return null;
+    return connectionStore.get(session.profileId) || null;
+  }
+
+  return pickProfile(connectionStore);
+}
+
 function databaseContext(profile, node) {
   return (
     node?.database ||
@@ -235,8 +252,8 @@ async function activate(context) {
   });
 
   registerCommand(context, 'simpleDb.connect', async (node) => {
-    const profile = profileForNode(connectionStore, node);
-    if (!profile) throw new Error('Connection not found.');
+    const profile = await profileForCommand(connectionStore, editorSessionManager, node);
+    if (!profile) return;
     const adapter = await connectionManager.connect(profile.id);
     vscode.window.showInformationMessage(
       `Simple DB: connected to ${profile.name} · ${adapter.serverVersion}`,
@@ -244,8 +261,8 @@ async function activate(context) {
   });
 
   registerCommand(context, 'simpleDb.disconnect', async (node) => {
-    const profile = profileForNode(connectionStore, node);
-    if (!profile) throw new Error('Connection not found.');
+    const profile = await profileForCommand(connectionStore, editorSessionManager, node);
+    if (!profile) return;
     const transactionCount = connectionManager.transactionCount(profile.id);
     const executionCount = connectionManager.executionCount(profile.id);
     if (transactionCount > 0 || executionCount > 0) {
@@ -264,8 +281,8 @@ async function activate(context) {
   });
 
   registerCommand(context, 'simpleDb.testConnection', async (node) => {
-    const profile = profileForNode(connectionStore, node) || (await pickProfile(connectionStore));
-    if (!profile) throw new Error('Connection not found.');
+    const profile = await profileForCommand(connectionStore, editorSessionManager, node);
+    if (!profile) return;
     const result = await connectionManager.testConnection(profile.id);
     vscode.window.showInformationMessage(
       `Simple DB: ${profile.name} responded in ${result.elapsedMs} ms · ${result.serverVersion}`,
@@ -273,8 +290,8 @@ async function activate(context) {
   });
 
   registerCommand(context, 'simpleDb.editConnection', async (node) => {
-    const profile = profileForNode(connectionStore, node);
-    if (!profile) throw new Error('Connection not found.');
+    const profile = await profileForCommand(connectionStore, editorSessionManager, node);
+    if (!profile) return;
     if (connectionManager.isConnected(profile.id)) {
       const transactions = connectionManager.transactionCount(profile.id);
       const executions = connectionManager.executionCount(profile.id);
@@ -298,7 +315,7 @@ async function activate(context) {
   });
 
   registerCommand(context, 'simpleDb.setPassword', async (node) => {
-    const profile = profileForNode(connectionStore, node) || (await pickProfile(connectionStore));
+    const profile = await profileForCommand(connectionStore, editorSessionManager, node);
     if (!profile) return;
     if (profile.engine === 'sqlite') {
       vscode.window.showInformationMessage('Simple DB: SQLite connections do not use a password.');
@@ -320,8 +337,8 @@ async function activate(context) {
   });
 
   registerCommand(context, 'simpleDb.deleteConnection', async (node) => {
-    const profile = profileForNode(connectionStore, node);
-    if (!profile) throw new Error('Connection not found.');
+    const profile = await profileForCommand(connectionStore, editorSessionManager, node);
+    if (!profile) return;
     const transactions = connectionManager.transactionCount(profile.id);
     const executions = connectionManager.executionCount(profile.id);
     const warning = transactions > 0 || executions > 0
@@ -341,7 +358,7 @@ async function activate(context) {
   });
 
   registerCommand(context, 'simpleDb.newQuery', async (node) => {
-    const profile = profileForNode(connectionStore, node) || (await pickProfile(connectionStore));
+    const profile = await profileForCommand(connectionStore, editorSessionManager, node);
     if (!profile) return;
     const database = databaseContext(profile, node);
     const schema = schemaContext(profile, node, database);
@@ -357,6 +374,18 @@ async function activate(context) {
   );
   registerCommand(context, 'simpleDb.goToDeclaration', () =>
     sqlNavigationProvider.openFromActiveEditor('declaration'),
+  );
+  registerCommand(context, 'simpleDb.goToPackageSpecification', () =>
+    sqlNavigationProvider.openFromActiveEditor('declaration', {
+      objectType: 'package',
+      label: 'package specification',
+    }),
+  );
+  registerCommand(context, 'simpleDb.goToPackageBody', () =>
+    sqlNavigationProvider.openFromActiveEditor('definition', {
+      objectType: 'package',
+      label: 'package body',
+    }),
   );
 
   registerCommand(context, 'simpleDb.executeCurrent', () => queryRunner.run('current'));

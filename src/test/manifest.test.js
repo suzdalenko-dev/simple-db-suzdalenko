@@ -3,8 +3,8 @@
 const manifest = require('../../package.json');
 
 describe('extension manifest', () => {
-  it('ships 0.1.5 without the removed History feature', () => {
-    expect(manifest.version).toBe('0.1.5');
+  it('ships 0.1.6 without the removed History feature', () => {
+    expect(manifest.version).toBe('0.1.6');
     expect(JSON.stringify(manifest).toLowerCase()).not.toContain('history');
   });
 
@@ -46,15 +46,32 @@ describe('extension manifest', () => {
     });
   });
 
-  it('keeps the SQL editor context menu focused on Simple DB daily actions', () => {
+  it('exposes the complete Simple DB workflow from the SQL editor context menu', () => {
     const menu = manifest.contributes.menus['simpleDb.editorContextMenu'];
     expect(menu.map((entry) => entry.command)).toEqual([
       'simpleDb.openConfiguration',
+      'simpleDb.refreshConnections',
+      'simpleDb.openConnectionsFolder',
       'simpleDb.changeEditorConnection',
+      'simpleDb.addConnection',
+      'simpleDb.connect',
+      'simpleDb.disconnect',
+      'simpleDb.testConnection',
+      'simpleDb.editConnection',
+      'simpleDb.setPassword',
+      'simpleDb.deleteConnection',
+      'simpleDb.newQuery',
       'simpleDb.executeCurrent',
+      'simpleDb.executeSelection',
       'simpleDb.executeDocument',
+      'simpleDb.cancelQuery',
+      'simpleDb.beginTransaction',
+      'simpleDb.commit',
+      'simpleDb.rollback',
       'simpleDb.goToDefinition',
       'simpleDb.goToDeclaration',
+      'simpleDb.goToPackageSpecification',
+      'simpleDb.goToPackageBody',
     ]);
   });
 

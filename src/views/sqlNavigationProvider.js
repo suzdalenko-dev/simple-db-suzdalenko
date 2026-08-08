@@ -119,7 +119,7 @@ class SqlNavigationProvider {
     return new vscode.Location(record.uri, positionAt(record.content, offset));
   }
 
-  async _locations(document, position, token, mode) {
+  async _locations(document, position, token, mode, options = {}) {
     if (token.isCancellationRequested) return null;
     const reference = extractSqlReference(
       document.getText(),
@@ -139,10 +139,13 @@ class SqlNavigationProvider {
       reference,
       mode,
     );
-    if (!targets.length || token.isCancellationRequested) return null;
+    const filteredTargets = options.objectType
+      ? targets.filter((target) => target.objectType === options.objectType)
+      : targets;
+    if (!filteredTargets.length || token.isCancellationRequested) return null;
 
     const localDocuments = new Map();
-    return targets.map((target) =>
+    return filteredTargets.map((target) =>
       this._virtualLocation(context.profile, target, localDocuments),
     );
   }
@@ -185,7 +188,7 @@ class SqlNavigationProvider {
     });
   }
 
-  async openFromActiveEditor(mode) {
+  async openFromActiveEditor(mode, options = {}) {
     const editor = vscode.window.activeTextEditor;
     if (!editor || editor.document.languageId !== 'sql') {
       throw new Error('Open a SQL editor before navigating to a database object.');
@@ -197,14 +200,16 @@ class SqlNavigationProvider {
         editor.selection.active,
         cancellationToken(),
         mode,
+        options,
       );
     } catch (error) {
       this._reportError(error, mode);
       return;
     }
     if (!locations?.length) {
+      const targetLabel = options.label || mode;
       vscode.window.showInformationMessage(
-        'Simple DB: no ' + mode + ' was found for the symbol under the cursor.',
+        'Simple DB: no ' + targetLabel + ' was found for the symbol under the cursor.',
       );
       return;
     }
@@ -230,8 +235,13 @@ class SqlNavigationProvider {
         location,
       });
     }
-    const title =
-      mode === 'declaration' ? 'Simple DB — Choose Declaration' : 'Simple DB — Choose Definition';
+    const title = options.label
+      ? 'Simple DB — Choose ' +
+        options.label.charAt(0).toUpperCase() +
+        options.label.slice(1)
+      : mode === 'declaration'
+        ? 'Simple DB — Choose Declaration'
+        : 'Simple DB — Choose Definition';
     const pick = await vscode.window.showQuickPick(items, {
       title,
       placeHolder: 'Multiple database objects or overloads match this reference',
