@@ -1,7 +1,7 @@
 'use strict';
 
 const vscode = require('vscode');
-const { DEFINITION_SCHEME } = require('../managers/editorSessionManager');
+const { DEFINITION_SCHEME, isSqlDocument } = require('../sql/sqlDocument');
 const { extractSqlReference, resolveSqlTargets } = require('../services/sqlNavigation');
 
 function positionAt(text, offset) {
@@ -190,7 +190,7 @@ class SqlNavigationProvider {
 
   async openFromActiveEditor(mode, options = {}) {
     const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.languageId !== 'sql') {
+    if (!editor || !isSqlDocument(editor.document, { allowDefinition: true })) {
       throw new Error('Open a SQL editor before navigating to a database object.');
     }
     let locations;

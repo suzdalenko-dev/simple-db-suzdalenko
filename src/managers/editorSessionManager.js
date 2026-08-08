@@ -3,8 +3,7 @@
 const { randomUUID } = require('node:crypto');
 const vscode = require('vscode');
 const { getDatabaseEngine } = require('../databaseEngines');
-
-const DEFINITION_SCHEME = 'simple-db-definition';
+const { DEFINITION_SCHEME, isSqlDocument } = require('../sql/sqlDocument');
 
 function databaseForProfile(profile, preferred = '') {
   return (
@@ -52,7 +51,7 @@ class EditorSessionManager {
   }
 
   _isSqlDocument(document) {
-    return document?.languageId === 'sql' && document.uri.scheme !== DEFINITION_SCHEME;
+    return isSqlDocument(document);
   }
 
   _canPersist(document) {

@@ -3,9 +3,21 @@
 const manifest = require('../../package.json');
 
 describe('extension manifest', () => {
-  it('ships 0.1.6 without the removed History feature', () => {
-    expect(manifest.version).toBe('0.1.6');
+  it('ships 0.1.7 without the removed History feature', () => {
+    expect(manifest.version).toBe('0.1.7');
     expect(JSON.stringify(manifest).toLowerCase()).not.toContain('history');
+  });
+
+  it('recognizes .sql files without depending on another SQL language extension', () => {
+    expect(manifest.contributes.languages).toContainEqual(
+      expect.objectContaining({ id: 'sql', extensions: ['.sql'] }),
+    );
+    expect(manifest.contributes.menus['editor/context']).toContainEqual(
+      expect.objectContaining({
+        submenu: 'simpleDb.editorContextMenu',
+        when: 'editorLangId == sql || resourceExtname == .sql',
+      }),
+    );
   });
 
   it('exposes only Open Configuration in the Command Palette', () => {
@@ -73,6 +85,7 @@ describe('extension manifest', () => {
       'simpleDb.goToPackageSpecification',
       'simpleDb.goToPackageBody',
     ]);
+    expect(menu.every((entry) => !entry.when || !entry.when.includes('editorLangId'))).toBe(true);
   });
 
   it('uses Ctrl+Enter, F5, and F12 for the main SQL workflow', () => {

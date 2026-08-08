@@ -3,10 +3,12 @@
 const path = require('node:path');
 const vscode = require('vscode');
 const { ConnectionManager } = require('./managers/connectionManager');
+const { EditorSessionManager } = require('./managers/editorSessionManager');
 const {
   DEFINITION_SCHEME,
-  EditorSessionManager,
-} = require('./managers/editorSessionManager');
+  SQL_DOCUMENT_SELECTOR,
+  isSqlDocument,
+} = require('./sql/sqlDocument');
 const { QueryRunner } = require('./services/queryRunner');
 const { SqlNavigationProvider } = require('./views/sqlNavigationProvider');
 const { ExportService } = require('./services/exportService');
@@ -66,10 +68,7 @@ async function profileForCommand(connectionStore, editorSessionManager, node) {
   if (nodeProfile) return nodeProfile;
 
   const editor = vscode.window.activeTextEditor;
-  if (
-    editor?.document?.languageId === 'sql' &&
-    editor.document.uri.scheme !== DEFINITION_SCHEME
-  ) {
+  if (editor && isSqlDocument(editor.document)) {
     const session = await editorSessionManager.ensureSession(editor.document);
     if (!session) return null;
     return connectionStore.get(session.profileId) || null;
@@ -200,11 +199,11 @@ async function activate(context) {
     sqlNavigationProvider,
   );
   const definitionRegistration = vscode.languages.registerDefinitionProvider(
-    { language: 'sql' },
+    SQL_DOCUMENT_SELECTOR,
     sqlNavigationProvider,
   );
   const declarationRegistration = vscode.languages.registerDeclarationProvider(
-    { language: 'sql' },
+    SQL_DOCUMENT_SELECTOR,
     sqlNavigationProvider,
   );
   context.subscriptions.push(
