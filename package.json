@@ -2,7 +2,7 @@
   "name": "simple-db-suzdalenko",
   "displayName": "Simple DB - SQL Client for SQLite, MySQL, PostgreSQL, SQL Server & Oracle",
   "description": "SQL client and database editor for SQLite, MySQL, PostgreSQL, SQL Server (MSSQL) and Oracle. Browse database objects, run queries, manage DDL and export results.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "suzdalenko-dev",
   "license": "MIT",
   "icon": "resources/simple-db-marketplace.png",
@@ -55,7 +55,6 @@
   ],
   "activationEvents": [
     "onView:simpleDb.connections",
-    "onView:simpleDb.history",
     "onView:simpleDb.results",
     "onLanguage:sql"
   ],
@@ -124,12 +123,13 @@
       },
       {
         "command": "simpleDb.changeEditorConnection",
-        "title": "Change Editor Connection",
-        "category": "Simple DB"
+        "title": "Select Connection for SQL File",
+        "category": "Simple DB",
+        "icon": "$(database)"
       },
       {
         "command": "simpleDb.executeCurrent",
-        "title": "Execute Selection or Current Statement",
+        "title": "Execute Query",
         "category": "Simple DB",
         "icon": "$(play)"
       },
@@ -140,7 +140,7 @@
       },
       {
         "command": "simpleDb.executeDocument",
-        "title": "Execute Entire Document",
+        "title": "Execute Script",
         "category": "Simple DB",
         "icon": "$(run-all)"
       },
@@ -163,38 +163,6 @@
       {
         "command": "simpleDb.rollback",
         "title": "Rollback",
-        "category": "Simple DB"
-      },
-      {
-        "command": "simpleDb.showHistory",
-        "title": "Show History",
-        "category": "Simple DB",
-        "icon": "$(history)"
-      },
-      {
-        "command": "simpleDb.clearHistory",
-        "title": "Clear History",
-        "category": "Simple DB",
-        "icon": "$(clear-all)"
-      },
-      {
-        "command": "simpleDb.openHistoryEntry",
-        "title": "Open History Query",
-        "category": "Simple DB"
-      },
-      {
-        "command": "simpleDb.copyHistoryEntry",
-        "title": "Copy SQL",
-        "category": "Simple DB"
-      },
-      {
-        "command": "simpleDb.rerunHistoryEntry",
-        "title": "Run Again",
-        "category": "Simple DB"
-      },
-      {
-        "command": "simpleDb.deleteHistoryEntry",
-        "title": "Delete from History",
         "category": "Simple DB"
       },
       {
@@ -262,11 +230,6 @@
           "id": "simpleDb.connections",
           "name": "Connections",
           "type": "tree"
-        },
-        {
-          "id": "simpleDb.history",
-          "name": "History",
-          "type": "tree"
         }
       ],
       "simpleDbResults": [
@@ -294,11 +257,6 @@
           "command": "simpleDb.openConnectionsFolder",
           "when": "view == simpleDb.connections",
           "group": "navigation@3"
-        },
-        {
-          "command": "simpleDb.clearHistory",
-          "when": "view == simpleDb.history",
-          "group": "navigation@1"
         }
       ],
       "view/item/context": [
@@ -376,48 +334,34 @@
           "command": "simpleDb.createObject",
           "when": "view == simpleDb.connections && viewItem =~ /simpleDb.(database|schema|group)/",
           "group": "object@1"
-        },
-        {
-          "command": "simpleDb.openHistoryEntry",
-          "when": "view == simpleDb.history && viewItem == simpleDb.historyEntry",
-          "group": "inline@1"
-        },
-        {
-          "command": "simpleDb.rerunHistoryEntry",
-          "when": "view == simpleDb.history && viewItem == simpleDb.historyEntry",
-          "group": "history@1"
-        },
-        {
-          "command": "simpleDb.copyHistoryEntry",
-          "when": "view == simpleDb.history && viewItem == simpleDb.historyEntry",
-          "group": "history@2"
-        },
-        {
-          "command": "simpleDb.deleteHistoryEntry",
-          "when": "view == simpleDb.history && viewItem == simpleDb.historyEntry",
-          "group": "history@3"
         }
       ],
       "editor/title": [
         {
-          "command": "simpleDb.executeCurrent",
-          "when": "editorLangId == sql",
+          "command": "simpleDb.changeEditorConnection",
+          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
           "group": "navigation@1"
         },
         {
-          "command": "simpleDb.executeDocument",
-          "when": "editorLangId == sql",
+          "command": "simpleDb.executeCurrent",
+          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
           "group": "navigation@2"
         },
         {
-          "command": "simpleDb.cancelQuery",
-          "when": "editorLangId == sql",
+          "command": "simpleDb.executeDocument",
+          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
           "group": "navigation@3"
+        },
+        {
+          "command": "simpleDb.cancelQuery",
+          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "group": "navigation@4"
         }
       ],
       "editor/context": [
         {
           "submenu": "simpleDb.editorContextMenu",
+          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
           "group": "simpleDb@1"
         }
       ],
@@ -431,23 +375,19 @@
           "group": "1_connection@2"
         },
         {
-          "command": "simpleDb.executeCurrent",
+          "command": "simpleDb.changeEditorConnection",
           "when": "editorLangId == sql",
           "group": "2_query@1"
         },
         {
-          "command": "simpleDb.executeDocument",
+          "command": "simpleDb.executeCurrent",
           "when": "editorLangId == sql",
           "group": "2_query@2"
         },
         {
-          "command": "simpleDb.changeEditorConnection",
+          "command": "simpleDb.executeDocument",
           "when": "editorLangId == sql",
           "group": "2_query@3"
-        },
-        {
-          "command": "simpleDb.showHistory",
-          "group": "3_history@1"
         }
       ]
     },
@@ -456,13 +396,13 @@
         "command": "simpleDb.executeCurrent",
         "key": "ctrl+enter",
         "mac": "cmd+enter",
-        "when": "editorTextFocus && editorLangId == sql"
+        "when": "editorTextFocus && editorLangId == sql && resourceScheme != simple-db-definition"
       },
       {
         "command": "simpleDb.executeDocument",
         "key": "ctrl+shift+enter",
         "mac": "cmd+shift+enter",
-        "when": "editorTextFocus && editorLangId == sql"
+        "when": "editorTextFocus && editorLangId == sql && resourceScheme != simple-db-definition"
       }
     ],
     "configuration": {
@@ -488,18 +428,6 @@
           "minimum": 100,
           "maximum": 1000000,
           "description": "Maximum number of characters retained per cell in the result view."
-        },
-        "simpleDb.history.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Store local query history."
-        },
-        "simpleDb.history.maxEntries": {
-          "type": "integer",
-          "default": 500,
-          "minimum": 0,
-          "maximum": 5000,
-          "description": "Maximum number of queries retained in history."
         },
         "simpleDb.confirmDestructiveQueries": {
           "type": "boolean",

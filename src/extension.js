@@ -3,8 +3,12 @@
 const path = require('node:path');
 const vscode = require('vscode');
 const { ConnectionManager } = require('./managers/connectionManager');
-const { EditorSessionManager } = require('./managers/editorSessionManager');
+const {
+  DEFINITION_SCHEME,
+  EditorSessionManager,
+} = require('./managers/editorSessionManager');
 const { QueryRunner } = require('./services/queryRunner');
+const { SqlNavigationProvider } = require('./views/sqlNavigationProvider');
 const { ExportService } = require('./services/exportService');
 const {
   OBJECT_LABELS,
@@ -14,23 +18,14 @@ const {
   objectTypesForEngine,
 } = require('./sql/ddlTemplates');
 const { ConnectionStore } = require('./storage/connectionStore');
-const { HistoryStore } = require('./storage/historyStore');
+const { EditorConnectionStore } = require('./storage/editorConnectionStore');
 const { ResultStore } = require('./storage/resultStore');
 const { promptConnection, promptPassword } = require('./ui/connectionForm');
 const { ConnectionsTreeProvider } = require('./views/connectionsTreeProvider');
-const { HistoryTreeProvider } = require('./views/historyTreeProvider');
 const { RESULT_VIEW_ID, ResultPanel } = require('./views/resultPanel');
 const { getDatabaseEngine } = require('./databaseEngines');
 
 let runtime = null;
-
-function historyConfiguration() {
-  const config = vscode.workspace.getConfiguration('simpleDb');
-  return {
-    enabled: config.get('history.enabled', true),
-    maxEntries: Math.max(0, Number(config.get('history.maxEntries', 500))),
-  };
-}
 
 function exportConfiguration() {
   const config = vscode.workspace.getConfiguration('simpleDb');
@@ -73,7 +68,7 @@ function schemaContext(profile, node, database) {
   if (node?.schema) return node.schema;
   if (profile.engine === 'postgresql') return 'public';
   if (profile.engine === 'sqlserver') return 'dbo';
-  if (profile.engine === 'oracle') return '';
+  if (profile.engine === 'oracle') return String(profile.user || '').toUpperCase();
   if (profile.engine === 'sqlite' || profile.engine === 'mysql') return database;
   return '';
 }
@@ -134,11 +129,12 @@ async function activate(context) {
     );
   }
   const connectionManager = new ConnectionManager(connectionStore);
+  const editorConnectionStore = new EditorConnectionStore(context.globalState);
   const editorSessionManager = new EditorSessionManager(
     connectionStore,
     connectionManager,
+    editorConnectionStore,
   );
-  const historyStore = new HistoryStore(context.globalState, historyConfiguration);
   const config = vscode.workspace.getConfiguration('simpleDb');
   const resultStore = new ResultStore(
     path.join(context.globalStorageUri.fsPath, 'results'),
@@ -161,27 +157,41 @@ async function activate(context) {
     editorSessionManager,
     resultStore,
     resultPanel,
-    historyStore,
   });
   const connectionsProvider = new ConnectionsTreeProvider(
     connectionStore,
     connectionManager,
   );
-  const historyProvider = new HistoryTreeProvider(historyStore);
+  const sqlNavigationProvider = new SqlNavigationProvider(
+    connectionStore,
+    connectionManager,
+    editorSessionManager,
+  );
 
   const connectionsView = vscode.window.createTreeView('simpleDb.connections', {
     treeDataProvider: connectionsProvider,
     showCollapseAll: true,
   });
-  const historyView = vscode.window.createTreeView('simpleDb.history', {
-    treeDataProvider: historyProvider,
-  });
+  const definitionContentRegistration = vscode.workspace.registerTextDocumentContentProvider(
+    DEFINITION_SCHEME,
+    sqlNavigationProvider,
+  );
+  const definitionRegistration = vscode.languages.registerDefinitionProvider(
+    { language: 'sql' },
+    sqlNavigationProvider,
+  );
+  const declarationRegistration = vscode.languages.registerDeclarationProvider(
+    { language: 'sql' },
+    sqlNavigationProvider,
+  );
   context.subscriptions.push(
     connectionsView,
-    historyView,
     resultViewRegistration,
+    definitionContentRegistration,
+    definitionRegistration,
+    declarationRegistration,
     connectionsProvider,
-    historyProvider,
+    sqlNavigationProvider,
     editorSessionManager,
   );
 
@@ -314,6 +324,8 @@ async function activate(context) {
     if (answer !== 'Delete') return;
     await connectionManager.disconnect(profile.id);
     await connectionStore.delete(profile.id);
+    await editorConnectionStore.deleteProfile(profile.id);
+    editorSessionManager.refreshStatusBar();
     connectionsProvider.refresh();
   });
 
@@ -575,56 +587,6 @@ async function activate(context) {
       node.name,
     );
     await vscode.env.clipboard.writeText(qualified);
-  });
-
-  registerCommand(context, 'simpleDb.showHistory', () =>
-    vscode.commands.executeCommand('simpleDb.history.focus'),
-  );
-
-  registerCommand(context, 'simpleDb.clearHistory', async () => {
-    if (!historyStore.list().length) return;
-    const answer = await vscode.window.showWarningMessage(
-      'Clear all local Simple DB query history?',
-      { modal: true },
-      'Clear History',
-    );
-    if (answer === 'Clear History') await historyStore.clear();
-  });
-
-  const historyEntry = (node) => node?.entry || historyStore.get(node?.id);
-
-  registerCommand(context, 'simpleDb.openHistoryEntry', async (node) => {
-    const entry = historyEntry(node);
-    if (!entry) throw new Error('The history entry no longer exists.');
-    const profile = connectionStore.get(entry.profileId);
-    if (!profile) throw new Error('The connection associated with this query no longer exists.');
-    await editorSessionManager.createQuery(profile, entry.sql, {
-      database: entry.database,
-      schema: entry.schema,
-    });
-  });
-
-  registerCommand(context, 'simpleDb.copyHistoryEntry', async (node) => {
-    const entry = historyEntry(node);
-    if (!entry) throw new Error('The history entry no longer exists.');
-    await vscode.env.clipboard.writeText(entry.sql);
-  });
-
-  registerCommand(context, 'simpleDb.rerunHistoryEntry', async (node) => {
-    const entry = historyEntry(node);
-    if (!entry) throw new Error('The history entry no longer exists.');
-    const profile = connectionStore.get(entry.profileId);
-    if (!profile) throw new Error('The connection associated with this query no longer exists.');
-    await editorSessionManager.createQuery(profile, entry.sql, {
-      database: entry.database,
-      schema: entry.schema,
-    });
-    await queryRunner.run('document');
-  });
-
-  registerCommand(context, 'simpleDb.deleteHistoryEntry', async (node) => {
-    const entry = historyEntry(node);
-    if (entry) await historyStore.delete(entry.id);
   });
 
   const connectionFileSaveDisposable = vscode.workspace.onDidSaveTextDocument(

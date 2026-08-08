@@ -14,7 +14,6 @@ class QueryRunner {
     this.editorSessionManager = options.editorSessionManager;
     this.resultStore = options.resultStore;
     this.resultPanel = options.resultPanel;
-    this.historyStore = options.historyStore;
   }
 
   _configuration() {
@@ -41,7 +40,6 @@ class QueryRunner {
       const selected = editor.document.getText(selection);
       return {
         statements: splitSqlDocument(selected, engineId),
-        historySql: selected,
         baseOffset: editor.document.offsetAt(selection.start),
       };
     }
@@ -51,7 +49,6 @@ class QueryRunner {
         const selected = editor.document.getText(selection);
         return {
           statements: splitSqlDocument(selected, engineId),
-          historySql: selected,
           baseOffset: editor.document.offsetAt(selection.start),
         };
       }
@@ -59,14 +56,12 @@ class QueryRunner {
       const statement = findStatementAtOffset(documentText, engineId, offset);
       return {
         statements: statement ? [statement] : [],
-        historySql: statement?.sql || '',
         baseOffset: 0,
       };
     }
 
     return {
       statements: splitSqlDocument(documentText, engineId),
-      historySql: documentText,
       baseOffset: 0,
     };
   }
@@ -356,20 +351,6 @@ class QueryRunner {
       error: failure && !cancelled ? failure.message : '',
       totalRows,
       affectedRows: totalAffectedRows,
-    });
-
-    await this.historyStore.add({
-      engine: profile.engine,
-      profileId: profile.id,
-      connectionName: profile.name,
-      database: session.database,
-      schema: session.schema,
-      sql: extracted.historySql,
-      durationMs,
-      rows: totalRows,
-      affectedRows: totalAffectedRows,
-      success: !failure,
-      error: failure?.message || '',
     });
 
     if (schemaChanged) this.connectionManager.notifyChanged(profile.id);

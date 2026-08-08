@@ -4,17 +4,39 @@ const { randomUUID } = require('node:crypto');
 const vscode = require('vscode');
 const { getDatabaseEngine } = require('../databaseEngines');
 
+const DEFINITION_SCHEME = 'simple-db-definition';
+
+function databaseForProfile(profile, preferred = '') {
+  return (
+    preferred ||
+    profile.database ||
+    profile.serviceName ||
+    (profile.engine === 'sqlite' ? 'main' : '')
+  );
+}
+
+function schemaForProfile(profile, database, preferred = '') {
+  if (preferred) return preferred;
+  if (profile.engine === 'postgresql') return 'public';
+  if (profile.engine === 'sqlserver') return 'dbo';
+  if (profile.engine === 'oracle') return String(profile.user || '').toUpperCase();
+  if (profile.engine === 'mysql') return database || profile.database || '';
+  if (profile.engine === 'sqlite') return database || 'main';
+  return '';
+}
+
 class EditorSessionManager {
-  constructor(connectionStore, connectionManager) {
+  constructor(connectionStore, connectionManager, editorConnectionStore) {
     this.connectionStore = connectionStore;
     this.connectionManager = connectionManager;
+    this.editorConnectionStore = editorConnectionStore;
     this.sessions = new Map();
     this.statusBar = vscode.window.createStatusBarItem(
-      vscode.StatusBarAlignment.Left,
+      vscode.StatusBarAlignment.Right,
       100,
     );
     this.statusBar.command = 'simpleDb.changeEditorConnection';
-    this.statusBar.tooltip = 'Simple DB: change the SQL editor connection';
+    this.statusBar.tooltip = 'Simple DB: select the connection for this SQL file';
 
     this.activeEditorDisposable = vscode.window.onDidChangeActiveTextEditor(() => {
       this.refreshStatusBar();
@@ -22,23 +44,33 @@ class EditorSessionManager {
     this.transactionListener = () => this.refreshStatusBar();
     this.connectionManager.on('transaction', this.transactionListener);
     this.connectionManager.on('change', this.transactionListener);
+    this.refreshStatusBar();
   }
 
   _key(document) {
     return document.uri.toString();
   }
 
-  createSession(document, profile, options = {}) {
+  _isSqlDocument(document) {
+    return document?.languageId === 'sql' && document.uri.scheme !== DEFINITION_SCHEME;
+  }
+
+  _canPersist(document) {
+    return (
+      this._isSqlDocument(document) &&
+      !document.isUntitled &&
+      document.uri.scheme !== 'untitled'
+    );
+  }
+
+  _newSession(document, profile, options = {}) {
+    const database = databaseForProfile(profile, options.database);
     const session = {
       id: randomUUID(),
       documentUri: document.uri.toString(),
       profileId: profile.id,
-      database:
-        options.database ||
-        profile.database ||
-        profile.serviceName ||
-        (profile.engine === 'sqlite' ? 'main' : ''),
-      schema: options.schema || '',
+      database,
+      schema: schemaForProfile(profile, database, options.schema),
       runningExecutionId: null,
       transactionNeedsRollback: false,
     };
@@ -47,8 +79,39 @@ class EditorSessionManager {
     return session;
   }
 
+  async _persist(document, session) {
+    if (!this.editorConnectionStore || !this._canPersist(document)) return;
+    await this.editorConnectionStore.set(this._key(document), {
+      profileId: session.profileId,
+      database: session.database,
+      schema: session.schema,
+    });
+  }
+
+  _restore(document) {
+    if (!this.editorConnectionStore || !this._canPersist(document)) return undefined;
+    const binding = this.editorConnectionStore.get(this._key(document));
+    if (!binding) return undefined;
+    const profile = this.connectionStore.get(binding.profileId);
+    if (!profile) {
+      void this.editorConnectionStore.delete(this._key(document)).catch(() => {});
+      return undefined;
+    }
+    return this._newSession(document, profile, {
+      database: binding.database,
+      schema: binding.schema,
+    });
+  }
+
+  async createSession(document, profile, options = {}) {
+    const session = this._newSession(document, profile, options);
+    await this._persist(document, session);
+    return session;
+  }
+
   get(document) {
-    return document ? this.sessions.get(this._key(document)) : undefined;
+    if (!document) return undefined;
+    return this.sessions.get(this._key(document)) || this._restore(document);
   }
 
   getActive() {
@@ -72,19 +135,16 @@ class EditorSessionManager {
       content: `${heading}${initialSql}`,
     });
     await vscode.window.showTextDocument(document, { preview: false });
-    const session = this.createSession(document, profile, options);
+    const session = await this.createSession(document, profile, options);
     return { document, session };
   }
 
-  async ensureActiveSession() {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-      throw new Error('There is no active SQL editor.');
+  async ensureSession(document) {
+    if (!this._isSqlDocument(document)) {
+      throw new Error('Open a regular SQL file before selecting a database connection.');
     }
-    const existing = this.get(editor.document);
-    if (existing) {
-      return existing;
-    }
+    const existing = this.get(document);
+    if (existing) return existing;
 
     const profiles = this.connectionStore.list();
     if (!profiles.length) {
@@ -94,24 +154,28 @@ class EditorSessionManager {
       profiles.map((profile) => ({
         label: `$(database) ${profile.name}`,
         description: getDatabaseEngine(profile.engine)?.displayName || profile.engine,
+        detail: databaseForProfile(profile),
         profile,
       })),
       {
-        title: 'Simple DB — Link Editor to Connection',
-        placeHolder: 'Select the connection for this SQL editor',
+        title: 'Simple DB — Select Connection for SQL File',
+        placeHolder: 'This SQL file will keep using the selected connection',
+        ignoreFocusOut: true,
       },
     );
-    if (!pick) {
-      return null;
-    }
-    return this.createSession(editor.document, pick.profile);
+    if (!pick) return null;
+    return this.createSession(document, pick.profile);
+  }
+
+  async ensureActiveSession() {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) throw new Error('There is no active SQL editor.');
+    return this.ensureSession(editor.document);
   }
 
   async changeActiveConnection() {
     const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-      return;
-    }
+    if (!editor || !this._isSqlDocument(editor.document)) return;
     const session = this.get(editor.document);
     if (session?.runningExecutionId) {
       throw new Error('Cancel or wait for the active query before changing connections.');
@@ -121,28 +185,32 @@ class EditorSessionManager {
     }
 
     const profiles = this.connectionStore.list();
+    if (!profiles.length) throw new Error('Create a connection in Simple DB first.');
     const pick = await vscode.window.showQuickPick(
       profiles.map((profile) => ({
-        label: profile.name,
+        label: `${profile.id === session?.profileId ? '$(check) ' : '$(database) '}${profile.name}`,
         description: getDatabaseEngine(profile.engine)?.displayName || profile.engine,
+        detail: databaseForProfile(profile),
         profile,
       })),
-      { title: 'Simple DB — Change Editor Connection' },
+      {
+        title: 'Simple DB — Select Connection for SQL File',
+        placeHolder: session
+          ? 'Choose a different connection for this SQL file'
+          : 'Choose the connection this SQL file should use',
+        ignoreFocusOut: true,
+      },
     );
-    if (!pick) {
-      return;
-    }
+    if (!pick) return;
 
     if (session) {
       session.profileId = pick.profile.id;
-      session.database =
-        pick.profile.database ||
-        pick.profile.serviceName ||
-        (pick.profile.engine === 'sqlite' ? 'main' : '');
-      session.schema = '';
+      session.database = databaseForProfile(pick.profile);
+      session.schema = schemaForProfile(pick.profile, session.database);
       session.transactionNeedsRollback = false;
+      await this._persist(editor.document, session);
     } else {
-      this.createSession(editor.document, pick.profile);
+      await this.createSession(editor.document, pick.profile);
     }
     this.refreshStatusBar();
   }
@@ -158,14 +226,25 @@ class EditorSessionManager {
   }
 
   refreshStatusBar() {
-    const session = this.getActive();
-    if (!session) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || !this._isSqlDocument(editor.document)) {
       this.statusBar.hide();
       return;
     }
+
+    const session = this.get(editor.document);
+    if (!session) {
+      this.statusBar.text = '$(database) Simple DB: Select Connection';
+      this.statusBar.tooltip = 'No connection is attached to this SQL file. Click to select one.';
+      this.statusBar.show();
+      return;
+    }
+
     const profile = this.connectionStore.get(session.profileId);
     if (!profile) {
-      this.statusBar.text = '$(warning) Simple DB | connection deleted';
+      this.sessions.delete(this._key(editor.document));
+      this.statusBar.text = '$(warning) Simple DB: Select Connection';
+      this.statusBar.tooltip = 'The connection previously attached to this SQL file no longer exists.';
       this.statusBar.show();
       return;
     }
@@ -174,13 +253,21 @@ class EditorSessionManager {
     const connected = this.connectionManager.isConnected(profile.id);
     const transaction = this.connectionManager.hasTransaction(profile.id, session.id);
     const mode = session.transactionNeedsRollback
-      ? 'TX requires ROLLBACK'
+      ? 'ROLLBACK required'
       : transaction
         ? 'TX active'
         : 'Auto-commit';
-    const running = session.runningExecutionId ? ' | $(sync~spin) Running' : '';
-    const connectionIcon = connected ? '$(database)' : '$(circle-slash)';
-    this.statusBar.text = `${connectionIcon} ${engine} | ${profile.name} | ${session.database || '-'} | ${mode}${running}`;
+    const running = session.runningExecutionId ? ' · $(sync~spin) Running' : '';
+    const connectionIcon = connected ? '$(database)' : '$(circle-outline)';
+    this.statusBar.text = `${connectionIcon} ${profile.name}${running}`;
+    this.statusBar.tooltip = [
+      `Simple DB — ${profile.name}`,
+      engine,
+      session.database ? `Database: ${session.database}` : '',
+      session.schema ? `Schema: ${session.schema}` : '',
+      connected ? `Connected · ${mode}` : `Connects on first query · ${mode}`,
+      'Click to change the connection for this SQL file.',
+    ].filter(Boolean).join('\n');
     this.statusBar.show();
   }
 
@@ -194,5 +281,8 @@ class EditorSessionManager {
 }
 
 module.exports = {
+  DEFINITION_SCHEME,
   EditorSessionManager,
+  databaseForProfile,
+  schemaForProfile,
 };

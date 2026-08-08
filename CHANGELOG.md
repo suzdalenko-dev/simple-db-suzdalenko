@@ -2,6 +2,24 @@
 
 All notable changes to Simple DB are documented in this file.
 
+## 0.1.3 - 2026-08-08
+
+### Added
+
+- Persistent connection attachment for saved SQL files. A file remembers its selected Simple DB connection until the user changes it.
+- A connection selector in the SQL editor toolbar and a connection-name indicator in the lower-right status bar. Unattached SQL files explicitly show `Simple DB: Select Connection`.
+- Native VS Code `Go to Definition` and `Go to Declaration` integration backed by database metadata/DDL for supported objects, including Oracle packages and routines.
+
+### Changed
+
+- `Ctrl+Enter` is presented as **Execute Query** and executes the selection or current statement; **Execute Script** runs the entire document.
+- Executing an unattached SQL file opens the connection picker once, attaches that connection to the file, and then continues the query.
+- New Oracle editor sessions default to the connected user's schema, improving object navigation without extra setup.
+
+### Removed
+
+- Removed query History completely: Activity Bar view, commands, settings, storage service, tree provider, and QueryRunner writes.
+
 ## 0.1.2 - 2026-08-08
 
 ### Added
