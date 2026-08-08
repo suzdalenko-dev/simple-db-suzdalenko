@@ -2,7 +2,7 @@
   "name": "simple-db-suzdalenko",
   "displayName": "Simple DB - SQL Client for SQLite, MySQL, PostgreSQL, SQL Server & Oracle",
   "description": "SQL client and database editor for SQLite, MySQL, PostgreSQL, SQL Server (MSSQL) and Oracle. Browse database objects, run queries, manage DDL and export results.",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "publisher": "suzdalenko-dev",
   "license": "MIT",
   "icon": "resources/simple-db-marketplace.png",
@@ -60,6 +60,18 @@
   ],
   "main": "./src/extension.js",
   "contributes": {
+    "languages": [
+      {
+        "id": "sql",
+        "aliases": [
+          "SQL",
+          "sql"
+        ],
+        "extensions": [
+          ".sql"
+        ]
+      }
+    ],
     "commands": [
       {
         "command": "simpleDb.openConfiguration",
@@ -479,146 +491,141 @@
       "editor/title": [
         {
           "command": "simpleDb.changeEditorConnection",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "(editorLangId == sql || resourceExtname == .sql) && resourceScheme != simple-db-definition",
           "group": "navigation@1"
         },
         {
           "command": "simpleDb.executeCurrent",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "(editorLangId == sql || resourceExtname == .sql) && resourceScheme != simple-db-definition",
           "group": "navigation@2"
         },
         {
           "command": "simpleDb.executeDocument",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "(editorLangId == sql || resourceExtname == .sql) && resourceScheme != simple-db-definition",
           "group": "navigation@3"
         },
         {
           "command": "simpleDb.cancelQuery",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "(editorLangId == sql || resourceExtname == .sql) && resourceScheme != simple-db-definition",
           "group": "navigation@4"
         }
       ],
       "editor/context": [
         {
           "submenu": "simpleDb.editorContextMenu",
-          "when": "editorLangId == sql",
+          "when": "editorLangId == sql || resourceExtname == .sql",
           "group": "simpleDb@1"
         }
       ],
       "simpleDb.editorContextMenu": [
         {
           "command": "simpleDb.openConfiguration",
-          "when": "editorLangId == sql",
           "group": "1_configuration@1"
         },
         {
           "command": "simpleDb.refreshConnections",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "1_configuration@2"
         },
         {
           "command": "simpleDb.openConnectionsFolder",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "1_configuration@3"
         },
         {
           "command": "simpleDb.changeEditorConnection",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "2_connection@1"
         },
         {
           "command": "simpleDb.addConnection",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "2_connection@2"
         },
         {
           "command": "simpleDb.connect",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "2_connection@3"
         },
         {
           "command": "simpleDb.disconnect",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "2_connection@4"
         },
         {
           "command": "simpleDb.testConnection",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "2_connection@5"
         },
         {
           "command": "simpleDb.editConnection",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "2_connection@6"
         },
         {
           "command": "simpleDb.setPassword",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "2_connection@7"
         },
         {
           "command": "simpleDb.deleteConnection",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "2_connection@8"
         },
         {
           "command": "simpleDb.newQuery",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "3_run@1"
         },
         {
           "command": "simpleDb.executeCurrent",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "3_run@2"
         },
         {
           "command": "simpleDb.executeSelection",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "3_run@3"
         },
         {
           "command": "simpleDb.executeDocument",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "3_run@4"
         },
         {
           "command": "simpleDb.cancelQuery",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "3_run@5"
         },
         {
           "command": "simpleDb.beginTransaction",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "4_transaction@1"
         },
         {
           "command": "simpleDb.commit",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "4_transaction@2"
         },
         {
           "command": "simpleDb.rollback",
-          "when": "editorLangId == sql && resourceScheme != simple-db-definition",
+          "when": "resourceScheme != simple-db-definition",
           "group": "4_transaction@3"
         },
         {
           "command": "simpleDb.goToDefinition",
-          "when": "editorLangId == sql",
           "group": "5_navigation@1"
         },
         {
           "command": "simpleDb.goToDeclaration",
-          "when": "editorLangId == sql",
           "group": "5_navigation@2"
         },
         {
           "command": "simpleDb.goToPackageSpecification",
-          "when": "editorLangId == sql",
           "group": "5_navigation@3"
         },
         {
           "command": "simpleDb.goToPackageBody",
-          "when": "editorLangId == sql",
           "group": "5_navigation@4"
         }
       ]
@@ -628,18 +635,18 @@
         "command": "simpleDb.executeCurrent",
         "key": "ctrl+enter",
         "mac": "cmd+enter",
-        "when": "editorTextFocus && editorLangId == sql && resourceScheme != simple-db-definition"
+        "when": "editorTextFocus && (editorLangId == sql || resourceExtname == .sql) && resourceScheme != simple-db-definition"
       },
       {
         "command": "simpleDb.executeDocument",
         "key": "f5",
         "mac": "f5",
-        "when": "editorTextFocus && editorLangId == sql && resourceScheme != simple-db-definition"
+        "when": "editorTextFocus && (editorLangId == sql || resourceExtname == .sql) && resourceScheme != simple-db-definition"
       },
       {
         "command": "simpleDb.goToDefinition",
         "key": "f12",
-        "when": "editorTextFocus && editorLangId == sql"
+        "when": "editorTextFocus && (editorLangId == sql || resourceExtname == .sql)"
       }
     ],
     "configuration": {

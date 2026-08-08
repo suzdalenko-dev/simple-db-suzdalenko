@@ -2,6 +2,18 @@
 
 All notable changes to Simple DB are documented in this file.
 
+## 0.1.7 - 2026-08-08
+
+### Fixed
+
+- The **Simple DB** right-click submenu now appears for every `.sql` file even when VS Code has not assigned that editor the `sql` language ID.
+- Connection selection, query execution, status-bar attachment, keyboard shortcuts, and database navigation now recognize `.sql` files by their file extension as well as by the VS Code SQL language ID.
+- Definition/declaration providers now attach to `.sql` resources directly, so `F12`, package specification, and package body navigation do not depend on a separate SQL language extension.
+
+### Changed
+
+- Simple DB now contributes the `.sql` to `sql` language association itself instead of relying on another installed extension to provide it.
+
 ## 0.1.6 - 2026-08-08
 
 ### Added

@@ -1,6 +1,6 @@
 # Simple DB
 
-Simple DB `0.1.6` is a Visual Studio Code extension written entirely in JavaScript for working with **SQLite, PostgreSQL, MySQL, SQL Server, and Oracle** through a single interface.
+Simple DB `0.1.7` is a Visual Studio Code extension written entirely in JavaScript for working with **SQLite, PostgreSQL, MySQL, SQL Server, and Oracle** through a single interface.
 
 The extension opens regular VS Code SQL documents and loads `src/extension.js` directly: there is no TypeScript, `tsconfig.json`, `dist` folder, or compilation step.
 
@@ -42,7 +42,7 @@ The extension opens regular VS Code SQL documents and loads `src/extension.js` d
 | SQL Server | `mssql` | databases, schemas, tables, views, procedures/functions, indexes, triggers, sequences, types, synonyms, `GO` |
 | Oracle | `oracledb` Thin | schemas, tables, views/materialized views, procedures/functions, packages, indexes, triggers, sequences, types, synonyms, PL/SQL |
 
-Oracle uses the default `node-oracledb` Thin mode, so normal connections do not require Oracle Client to be installed. Simple DB `0.1.6` uses SQL authentication with a username and password for SQL Server.
+Oracle uses the default `node-oracledb` Thin mode, so normal connections do not require Oracle Client to be installed. Simple DB `0.1.7` uses SQL authentication with a username and password for SQL Server.
 
 ## No imposed row limit by default
 
@@ -143,7 +143,7 @@ The `id` is generated and managed by Simple DB. Do not change it. Use **Simple D
 
 ### Editor context menu
 
-Right-clicking inside any regular SQL editor shows a native **Simple DB** submenu with the complete working set:
+Right-clicking inside any regular `.sql` editor shows a native **Simple DB** submenu with the complete working set. Simple DB recognizes the `.sql` extension directly, so this menu does not depend on another extension assigning the editor's SQL language mode:
 
 - Open Configuration
 - Refresh Connections
