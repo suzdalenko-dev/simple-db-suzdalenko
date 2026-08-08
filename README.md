@@ -1,6 +1,6 @@
 # Simple DB
 
-Simple DB `0.1.1` is a Visual Studio Code extension written entirely in JavaScript for working with **SQLite, PostgreSQL, MySQL, SQL Server, and Oracle** through a single interface.
+Simple DB `0.1.2` is a Visual Studio Code extension written entirely in JavaScript for working with **SQLite, PostgreSQL, MySQL, SQL Server, and Oracle** through a single interface.
 
 The extension opens regular VS Code SQL documents. `F5` launches `src/extension.js` directly: there is no TypeScript, `tsconfig.json`, `dist` folder, or compilation step.
 
@@ -17,10 +17,18 @@ The extension opens regular VS Code SQL documents. `F5` launches `src/extension.
 - Generate `CREATE`, `ALTER`, and `DROP` scripts from the explorer and inspect object definitions/DDL.
 - Use explicit per-editor transactions with `BEGIN`, `COMMIT`, and `ROLLBACK`.
 - Cancel queries and configure query timeouts per connection.
-- View results with multiple result sets, types, `NULL`, affected rows, duration, and cell/row/selection copy actions.
+- View results below the SQL editor in a resizable SQL Developer-style grid with row numbers, multiple result sets, types, `NULL`, affected rows, duration, and cell/row/selection copy actions.
 - Preserve 64-bit integers and high-precision `NUMBER` values exactly before displaying or exporting them.
 - Export already-retrieved results to CSV, JSON, or XLSX without executing the SQL again.
 - Use configurable local query history with reopen, copy, and rerun actions.
+
+## Quick start
+
+1. Open **Simple DB** in the Activity Bar and choose **Create Connection**.
+2. Select the database engine and enter a connection name. SQLite uses the native file picker; network databases create a JSON profile with the correct default parameters.
+3. Edit the generated JSON if needed, press `Ctrl+S`, then use **Test Connection** or **Connect** from the connection menu. Passwords stay outside JSON in VS Code `SecretStorage`.
+4. Choose **New Query**, write SQL, and press `Ctrl+Enter` to execute the selection or the statement at the cursor. Use `Ctrl+Shift+Enter` to execute the entire document.
+5. Results appear automatically in the resizable **Simple DB — Results** panel below the SQL editor. The same core commands are also available from the editor's **Simple DB** context submenu.
 
 ## Five database engines
 
@@ -32,7 +40,7 @@ The extension opens regular VS Code SQL documents. `F5` launches `src/extension.
 | SQL Server | `mssql` | databases, schemas, tables, views, procedures/functions, indexes, triggers, sequences, types, synonyms, `GO` |
 | Oracle | `oracledb` Thin | schemas, tables, views/materialized views, procedures/functions, packages, indexes, triggers, sequences, types, synonyms, PL/SQL |
 
-Oracle uses the default `node-oracledb` Thin mode, so normal connections do not require Oracle Client to be installed. Simple DB `0.1.1` uses SQL authentication with a username and password for SQL Server.
+Oracle uses the default `node-oracledb` Thin mode, so normal connections do not require Oracle Client to be installed. Simple DB `0.1.2` uses SQL authentication with a username and password for SQL Server.
 
 ## No imposed row limit by default
 
@@ -79,7 +87,9 @@ Each SQL editor has an independent session identifier. A transaction reserves it
 
 ## Results, copy, and export
 
-The result panel supports page navigation, switching between multiple result sets, distinguishing `NULL`, selecting a cell or a range with `Shift`, and copying a cell, row, or selection.
+Executing SQL automatically reveals the **Simple DB** view in VS Code's lower Panel while keeping the SQL editor visible above it. `SELECT` results are displayed in a spreadsheet-like grid with a sticky header, row numbers, horizontal/vertical scrolling, page navigation, and tabs for multiple result sets.
+
+The result grid distinguishes `NULL`, shows column types, supports selecting a cell or a range with `Shift`, and can copy a cell, row, or selection. Non-query statements display their execution message and affected-row information in the same lower Results view.
 
 CSV, JSON, and XLSX are streamed from the retrieved temporary result pages. The query is not executed again. Very large cell values are bounded for display by `simpleDb.maxCellCharacters`; the UI explicitly indicates when a cell has been truncated for display.
 
@@ -201,7 +211,7 @@ src/
   storage/       # profiles, history, and paged results
   test/          # JavaScript tests
   ui/            # connection form
-  views/         # trees and result panel
+  views/         # trees and lower result grid
   extension.js   # activate/deactivate
 ```
 
