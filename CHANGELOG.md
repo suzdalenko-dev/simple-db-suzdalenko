@@ -2,6 +2,18 @@
 
 All notable changes to Simple DB are documented in this file.
 
+## 0.1.6 - 2026-08-08
+
+### Added
+
+- The complete connection and query workflow to the **Simple DB** right-click submenu of regular SQL files: create/select/connect/disconnect/test/edit/delete/refresh connections, create queries, run statement/selection/script, cancel, and transaction controls.
+- **Go to Package Specification** and **Go to Package Body** for explicit Oracle package navigation.
+
+### Changed
+
+- Connection commands launched from a SQL editor now use the connection attached to that file. If the file has no connection yet, Simple DB opens the same cancellable connection picker first.
+- The Command Palette still exposes only **Simple DB: Open Configuration**.
+
 ## 0.1.5 - 2026-08-08
 
 ### Added
